@@ -1,5 +1,5 @@
 import scrapy
-from items.py import PropertydatascraperItem
+from property_data_spideys.items import PropertydatascraperItem
 from scrapy.spiders import CSVFeedSpider
 import re
 #Sample Pin: 6805000260
