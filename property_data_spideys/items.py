@@ -8,6 +8,6 @@
 import scrapy
 
 
-class PropertydatascraperItem(scrapy.Item):
+class pierceCountyItem(scrapy.Item):
     parcel = scrapy.Field()
     site_address = scrapy.Field()
