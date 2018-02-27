@@ -38,6 +38,8 @@ class pierceCountyScraper(CSVFeedSpider):
         item['site_address'] = site_address
         item['mailing_address'] = mailing_address
 
+
+
         #Tax page will be used for property tax paid/owed and tax assesment
         return [scrapy.Request('https://epip.co.pierce.wa.us/cfapps/atr/epip/taxvalue.cfm?parcel='+pin, callback=self.parse_taxes,meta={'item': item,'pin':pin})]
 
@@ -65,13 +67,13 @@ class pierceCountyScraper(CSVFeedSpider):
         item['tax_year_3_assessed'] = tax_year_3_assessed
 
         item['current_balance_due'] = current_balance_due
-
+        print("Printing#########")
         #Land page will give us lot size/square footage and utility types installed or info on the driveway(paved unpaved)(optional)
-        yield [scrapy.Request('https://epip.co.pierce.wa.us/cfapps/atr/epip/land.cfm?parcel='+pin, callback=self.parse_land,meta={'item': item,'pin':pin})]
+        return [scrapy.Request('https://epip.co.pierce.wa.us/cfapps/atr/epip/land.cfm?parcel='+pin, callback=self.parse_land,meta={'item': item,'pin':pin})]
 
 
     def parse_land(self, response):
-
+        print("Printing######### __LAND")
         square_footage = self.check_data(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr[1]/td[2]/table/tr[2]/td[2]/text()').extract())
         acres = self.check_data(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr[1]/td[2]/table/tr[3]/td[2]/text()').extract())
 
@@ -95,6 +97,7 @@ class pierceCountyScraper(CSVFeedSpider):
 
 
     def parse_building(self, response):
+        print("Printing#########__building")
 
         property_type = self.check_data(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[4]/tr/td/table/tr[2]/td/table[1]/tr[1]/td[2]/text()').extract())
         occupancy = self.check_data(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[4]/tr/td/table/tr[2]/td/table[1]/tr[5]/td[2]/text()').extract())
@@ -113,6 +116,8 @@ class pierceCountyScraper(CSVFeedSpider):
         item = response.meta['item']
         pin = response.meta['pin']
 
+        print("Printing#########", property_type,occupancy,square_footage)
+
         item['property_type'] = property_type
         item['occupancy'] = occupancy
         item['building_square_footage'] = square_footage
@@ -130,16 +135,16 @@ class pierceCountyScraper(CSVFeedSpider):
 
 
     def parse_land(self, response):
-
+        print("Printing#########__land")
         item = response.meta['item']
 
         sale1_price = 'NA'
-        sale_date = 'NA'
+        sale1_date = 'NA'
         sale2_price = 'NA'
         sale2_date = 'NA'
 
         item['sale1_price'] = sale1_price
-        item['sale_date'] = sale_date
+        item['sale1_date'] = sale1_date
         item['sale2_price'] = sale2_price
         item['sale2_date'] = sale2_date
 
