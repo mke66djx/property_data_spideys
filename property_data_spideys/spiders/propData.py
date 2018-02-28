@@ -74,7 +74,7 @@ class pierceCountyScraper(CSVFeedSpider):
 
     def parse_land(self, response):
         print("Printing######### __LAND")
-        square_footage = self.check_data(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr[1]/td[2]/table/tr[2]/td[2]/text()').extract())
+        lot_square_footage = self.check_data(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr[1]/td[2]/table/tr[2]/td[2]/text()').extract())
         acres = self.check_data(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr[1]/td[2]/table/tr[3]/td[2]/text()').extract())
 
         electric = self.check_data(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr[2]/td[2]/table/tr[2]/td[2]/text()').extract())
@@ -84,7 +84,7 @@ class pierceCountyScraper(CSVFeedSpider):
         item = response.meta['item']
         pin = response.meta['pin']
 
-        item['lot_square_footage'] = square_footage
+        item['lot_square_footage'] = lot_square_footage
         item['lot_acres'] = acres
 
         item['electric'] = electric
@@ -134,7 +134,7 @@ class pierceCountyScraper(CSVFeedSpider):
         return [scrapy.Request('https://epip.co.pierce.wa.us/cfapps/atr/epip/sales.cfm?parcel='+pin, callback=self.parse_sales,meta={'item': item,'pin':pin})]
 
 
-    def parse_land(self, response):
+    def parse_sales(self, response):
         print("Printing#########__land")
         item = response.meta['item']
 
