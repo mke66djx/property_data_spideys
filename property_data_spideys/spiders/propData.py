@@ -6,7 +6,8 @@ import re
 
 class pierceCountyScraper(CSVFeedSpider):
     name = "pierce_county_spider"
-    start_urls = [ "file:///home/edit/GruntJS/propertyDataScraper/ParcelsLists/parcels.csv"]
+    start_urls = [ "file:///C:/Users/ebeluli/Desktop/property_data_spideys/ParcelsLists/parcels.csv"]
+    #start_urls = [ "file:///home/edit/GruntJS/propertyDataScraper/ParcelsLists/parcels.csv"]
 
     def parse_row(self,response,row):
         pin = row['parcel']

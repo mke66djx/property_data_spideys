@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Scrapy settings for propertyDataScraper project
+# Scrapy settings for Property Data Spideys project
 #
 # For simplicity, this file contains only settings considered important or
 # commonly used. You can find more settings consulting the documentation:
@@ -72,7 +72,7 @@ ROBOTSTXT_OBEY = True
 # Configure item pipelines
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-   'propertyDataScraper.pipelines.PropertydataScraperPipeline': 300,
+   'property_data_spideys.pipelines.PropertyDataScraperPipeline': 300,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
