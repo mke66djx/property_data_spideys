@@ -1,17 +1,12 @@
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy import MetaData
-from property_data_spideys.models import PierceCountyPropertyDescriptionData,PierceCountyPropertySalesData,db_connect,create_table,cloneTable
-from sqlalchemy import Table
-from sqlalchemy.engine import create_engine
-from alembic.config import Config
-import alembic
-from alembic.script import ScriptDirectory
-from alembic.runtime.environment import EnvironmentContext
+from property_data_spideys.models import PierceCountyPropertyData,PierceCountySalesData,PiercePropertyDataTemp,PierceSalesDataTemp,db_connect,create_table
 import functools
-from alembic import op
+from sqlalchemy.orm import (mapper,sessionmaker)
 
 
-#Base Pierce pipeline- performs full table refresh
+#---------------------------------------------------------------------------------------------------------
+#-----------------------------------------Full Table Update Pipelines-------------------------------------
+#---------------------------------------------------------------------------------------------------------
+
 class PierceFullPipeline(object):
     def __init__(self):
         self.engine = db_connect()
@@ -29,26 +24,17 @@ class PierceFullPipeline(object):
 
     def open_spider(self, spider):
         spider.myPipeline = self
-        self.create_temp_tables()
 
     def close_spider(self,spider):
         self.upgrade()
 
-    def create_temp_tables(self):
-        meta = MetaData(bind=self.engine)
-        self.propertyTemp = cloneTable('propertyTemp', PierceCountyPropertyDescriptionData.__table__, meta)
-        self.salesTemp = cloneTable('salesTemp', PierceCountyPropertySalesData.__table__, meta)
-        self.propertyTemp.create()
-        self.salesTemp.create()
-
     def upgrade(self):
-        op.drop_table('piercecounty')
-        op.drop_table('piercecountysales')
-        op.rename_table('propertyTemp', 'piercecounty')
-        op.rename_table('salesTemp', 'piercecountysales')
-        op.drop_table('salesTemp')
-        op.drop_table('propertyTemp')
-
+        from alembic.config import Config
+        from alembic import command
+        alembic_cfg = Config(r"C:/Users/ebeluli/Desktop/property_data_spideys/alembic.ini")
+        with self.engine.begin() as connection:
+            alembic_cfg.attributes['connection'] = connection
+            command.upgrade(alembic_cfg, "head")
 
     @check_spider_pipeline
     def process_item(self,item,spider):
@@ -56,39 +42,39 @@ class PierceFullPipeline(object):
         session = self.Session()
 
         #Build a row
-        # self.propertyTemp = PierceCountyPropertyDescriptionData()
-        # self.salesDataTemp = PierceCountyPropertySalesData()
+        propertyDataTemp = PiercePropertyDataTemp()
+        salesDataTemp = PierceSalesDataTemp()
 
-        self.propertyTemp.parcel = item["parcel"]
-        self.propertyTemp.mailing_address = item["mailing_address"]
-        self.propertyTemp.owner_name = item["owner_name"]
-        self.propertyTemp.county = item["county"]
-        self.propertyTemp.site_address = item["site_address"]
-        self.propertyTemp.property_type = item["property_type"]
-        self.propertyTemp.occupancy = item["occupancy"]
-        self.propertyTemp.year_built = item["year_built"]
-        self.propertyTemp.adj_year_built = item["adj_year_built"]
-        self.propertyTemp.units = item["units"]
-        self.propertyTemp.bedrooms = item["bedrooms"]
-        self.propertyTemp.baths = item["baths"]
-        self.propertyTemp.siding_type = item["siding_type"]
-        self.propertyTemp.stories = item["stories"]
-        self.propertyTemp.lot_square_footage = item["lot_square_footage"]
-        self.propertyTemp.lot_acres = item["lot_acres"]
-        self.propertyTemp.current_balance_due = item["current_balance_due"]
-        self.propertyTemp.tax_year_1 = item["tax_year_1"]
-        self.propertyTemp.tax_year_2 = item["tax_year_2"]
-        self.propertyTemp.tax_year_3 = item["tax_year_3"]
-        self.propertyTemp.tax_year_1_assessed = item["tax_year_1_assessed"]
-        self.propertyTemp.tax_year_2_assessed = item["tax_year_2_assessed"]
-        self.propertyTemp.tax_year_3_assessed = item["tax_year_3_assessed"]
+        propertyDataTemp.parcel = item["parcel"]
+        propertyDataTemp.mailing_address = item["mailing_address"]
+        propertyDataTemp.owner_name = item["owner_name"]
+        propertyDataTemp.county = item["county"]
+        propertyDataTemp.site_address = item["site_address"]
+        propertyDataTemp.property_type = item["property_type"]
+        propertyDataTemp.occupancy = item["occupancy"]
+        propertyDataTemp.year_built = item["year_built"]
+        propertyDataTemp.adj_year_built = item["adj_year_built"]
+        propertyDataTemp.units = item["units"]
+        propertyDataTemp.bedrooms = item["bedrooms"]
+        propertyDataTemp.baths = item["baths"]
+        propertyDataTemp.siding_type = item["siding_type"]
+        propertyDataTemp.stories = item["stories"]
+        propertyDataTemp.lot_square_footage = item["lot_square_footage"]
+        propertyDataTemp.lot_acres = item["lot_acres"]
+        propertyDataTemp.current_balance_due = item["current_balance_due"]
+        propertyDataTemp.tax_year_1 = item["tax_year_1"]
+        propertyDataTemp.tax_year_2 = item["tax_year_2"]
+        propertyDataTemp.tax_year_3 = item["tax_year_3"]
+        propertyDataTemp.tax_year_1_assessed = item["tax_year_1_assessed"]
+        propertyDataTemp.tax_year_2_assessed = item["tax_year_2_assessed"]
+        propertyDataTemp.tax_year_3_assessed = item["tax_year_3_assessed"]
 
-        self.salesTemp.tax_year_1_assessed = item["sale_price"]
-        self.salesTemp.tax_year_2_assessed = item["sale_date"]
+        salesDataTemp.tax_year_1_assessed = item["sale_price"]
+        salesDataTemp.tax_year_2_assessed = item["sale_date"]
 
         try:
-            session.add(self.propertyTemp)
-            session.add(self.salesTemp)
+            session.add(propertyDataTemp)
+            session.add(salesDataTemp)
             session.commit()
         except:
             session.rollback()
@@ -97,7 +83,10 @@ class PierceFullPipeline(object):
             session.close()
         return item
 
-#Base Pierce pipeline- performs full table refresh
+#---------------------------------------------------------------------------------------------------------
+#-----------------------------------------Row Update Pipelines--------------------------------------------
+#---------------------------------------------------------------------------------------------------------
+
 class PierceRowPipeline(object):
     def __init__(self):
         self.engine = db_connect()
@@ -125,38 +114,40 @@ class PierceRowPipeline(object):
         session = self.Session()
 
         #Build a row
-        self.propertyTemp = PierceCountyPropertyDescriptionData()
-        self.salesDataTemp = PierceCountyPropertySalesData()
+        propertyDataTemp = PiercePropertyDataTemp()
+        salesDataTemp = PierceSalesDataTemp()
 
-        self.propertyTemp.parcel = item["parcel"]
-        self.propertyTemp.mailing_address = item["mailing_address"]
-        self.propertyTemp.owner_name = item["owner_name"]
-        self.propertyTemp.county = item["county"]
-        self.propertyTemp.site_address = item["site_address"]
-        self.propertyTemp.property_type = item["property_type"]
-        self.propertyTemp.occupancy = item["occupancy"]
-        self.propertyTemp.year_built = item["year_built"]
-        self.propertyTemp.adj_year_built = item["adj_year_built"]
-        self.propertyTemp.units = item["units"]
-        self.propertyTemp.bedrooms = item["bedrooms"]
-        self.propertyTemp.baths = item["baths"]
-        self.propertyTemp.siding_type = item["siding_type"]
-        self.propertyTemp.stories = item["stories"]
-        self.propertyTemp.lot_square_footage = item["lot_square_footage"]
-        self.propertyTemp.lot_acres = item["lot_acres"]
-        self.propertyTemp.current_balance_due = item["current_balance_due"]
-        self.propertyTemp.tax_year_1 = item["tax_year_1"]
-        self.propertyTemp.tax_year_2 = item["tax_year_2"]
-        self.propertyTemp.tax_year_3 = item["tax_year_3"]
-        self.propertyTemp.tax_year_1_assessed = item["tax_year_1_assessed"]
-        self.propertyTemp.tax_year_2_assessed = item["tax_year_2_assessed"]
-        self.propertyTemp.tax_year_3_assessed = item["tax_year_3_assessed"]
+        propertyDataTemp.parcel = item["parcel"]
+        propertyDataTemp.mailing_address = item["mailing_address"]
+        propertyDataTemp.owner_name = item["owner_name"]
+        propertyDataTemp.county = item["county"]
+        propertyDataTemp.site_address = item["site_address"]
+        propertyDataTemp.property_type = item["property_type"]
+        propertyDataTemp.occupancy = item["occupancy"]
+        propertyDataTemp.year_built = item["year_built"]
+        propertyDataTemp.adj_year_built = item["adj_year_built"]
+        propertyDataTemp.units = item["units"]
+        propertyDataTemp.bedrooms = item["bedrooms"]
+        propertyDataTemp.baths = item["baths"]
+        propertyDataTemp.siding_type = item["siding_type"]
+        propertyDataTemp.stories = item["stories"]
+        propertyDataTemp.lot_square_footage = item["lot_square_footage"]
+        propertyDataTemp.lot_acres = item["lot_acres"]
+        propertyDataTemp.current_balance_due = item["current_balance_due"]
+        propertyDataTemp.tax_year_1 = item["tax_year_1"]
+        propertyDataTemp.tax_year_2 = item["tax_year_2"]
+        propertyDataTemp.tax_year_3 = item["tax_year_3"]
+        propertyDataTemp.tax_year_1_assessed = item["tax_year_1_assessed"]
+        propertyDataTemp.tax_year_2_assessed = item["tax_year_2_assessed"]
+        propertyDataTemp.tax_year_3_assessed = item["tax_year_3_assessed"]
 
-        self.salesDataTemp.tax_year_1_assessed = item["sale_price"]
-        self.salesDataTemp.tax_year_2_assessed = item["sale_date"]
+        salesDataTemp.tax_year_1_assessed = item["sale_price"]
+        salesDataTemp.tax_year_2_assessed = item["sale_date"]
 
         try:
-            session.add(self.propertyTemp)
+            session.add(propertyDataTemp)
+            session.add(salesDataTemp)
+
             session.commit()
         except:
             session.rollback()

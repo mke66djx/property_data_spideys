@@ -6,6 +6,9 @@ from scrapy.xlib.pydispatch import dispatcher
 from property_data_spideys import pipelines
 
 class pierceCountyScraper(CSVFeedSpider):
+    name = "pierce_county_spider"
+    start_urls = [ "file:///C:/Users/ebeluli/Desktop/property_data_spideys/ParcelsLists/parcels.csv"]
+    #start_urls = [ "file:///home/edit/GruntJS/propertyDataScraper/ParcelsLists/parcels.csv"]
     def __init__(self):
         dispatcher.connect(self.spider_closed, signals.spider_closed)
         #This will later be passed in as argument by spider caller
@@ -16,10 +19,6 @@ class pierceCountyScraper(CSVFeedSpider):
             self.pipeline = set([pipelines.PierceRowPipeline])
         else:
             self.pipeline = None
-
-    name = "pierce_county_spider"
-    start_urls = [ "file:///C:/Users/ebeluli/Desktop/property_data_spideys/ParcelsLists/parcels.csv"]
-    #start_urls = [ "file:///home/edit/GruntJS/propertyDataScraper/ParcelsLists/parcels.csv"]
 
     def spider_closed(self, spider):
         pass
