@@ -7,9 +7,10 @@
 
 import scrapy
 
-
-class pierceCountyItem(scrapy.Item):
+class PierceCountyDescriptionItem(scrapy.Item):
+    owner_name = scrapy.Field()
     parcel = scrapy.Field()
+    county = scrapy.Field()
     site_address = scrapy.Field()
     mailing_address = scrapy.Field()
     tax_year_1 = scrapy.Field()
@@ -37,9 +38,7 @@ class pierceCountyItem(scrapy.Item):
     baths = scrapy.Field()
     siding_type = scrapy.Field()
     units = scrapy.Field()
-    sale1_price = scrapy.Field()
-    sale1_date = scrapy.Field()
-    sale2_date = scrapy.Field()
-    sale2_price = scrapy.Field()
+    sale_price = scrapy.Field()
+    sale_date = scrapy.Field()
 
 
