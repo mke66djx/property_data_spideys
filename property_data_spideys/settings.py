@@ -72,8 +72,10 @@ ROBOTSTXT_OBEY = True
 # Configure item pipelines
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-   'property_data_spideys.pipelines.PierceFullPipeline': 300,
-    'property_data_spideys.pipelines.PierceRowPipeline': 300
+    'property_data_spideys.pipelines.PierceFullPipeline': 300,
+    'property_data_spideys.pipelines.PierceRowPipeline': 300,
+    'property_data_spideys.pipelines.DuvalFullPipeline': 300,
+    'property_data_spideys.pipelines.DuvalRowPipeline': 300
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

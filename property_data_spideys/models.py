@@ -50,6 +50,42 @@ class PierceCountySalesData(DeclarativeBase):
     sale_price = Column('sale_price', Text())
     sale_date = Column('sale_date', Text())
 
+class DuvalCountyPropertyData(DeclarativeBase):
+    __tablename__ = "duvalCounty"
+    parcel = Column('parcel',String(20),primary_key=True)
+    mailing_address = Column('mailing_address', Text())
+    owner_name = Column('owner_name', Text())
+
+    site_address = Column('site_address', Text())
+    property_type = Column('property_type', Text())
+    occupancy = Column('occupancy', Text())
+    year_built = Column('year_built', Text())
+    adj_year_built = Column('adj_year_built', Text())
+    units = Column('units', Text())
+    bedrooms = Column('bedrooms', Text())
+    baths = Column('baths', Text())
+    siding_type = Column('siding_type', Text())
+    stories = Column('stories', Text())
+    building_square_footage = Column('building_square_footage', Text())
+    attached_garage_footage = Column('attached_garage_footage', Text())
+    lot_square_footage = Column('lot_square_footage', Text())
+    lot_acres = Column('lot_acres', Text())
+
+    # current_balance_due = Column('current_balance_due', Text())
+
+    # tax_year_1 = Column('tax_year_1', Text())
+    # tax_year_2 = Column('tax_year_2', Text())
+    # tax_year_3 = Column('tax_year_3', Text())
+    tax_year_1_assessed = Column('tax_year_1_assessed', Text())
+    tax_year_2_assessed = Column('tax_year_2_assessed', Text())
+    tax_year_3_assessed = Column('tax_year_3_assessed', Text())
+
+class DuvalCountySalesData(DeclarativeBase):
+    __tablename__ = "duvalCountySales"
+    id = Column(Integer, primary_key=True)
+    parcel = Column('parcel', String(20))
+    sale_price = Column('sale1_price', Text())
+    sale_date = Column('sale1_date', Text())
 
 #--------------------------------------------------------------------------
 #-------The temps below are used when doing full table updates-------------
@@ -89,4 +125,41 @@ class PierceSalesDataTemp(DeclarativeBase):
     sale_price = Column('sale_price', Text())
     sale_date = Column('sale_date', Text())
 
+
+class DuvalPropertyDataTemp(DeclarativeBase):
+    __tablename__ = "duvalCountyTemp"
+    parcel = Column('parcel',String(20),primary_key=True)
+    mailing_address = Column('mailing_address', Text())
+    owner_name = Column('owner_name', Text())
+
+    site_address = Column('site_address', Text())
+    property_type = Column('property_type', Text())
+    occupancy = Column('occupancy', Text())
+    year_built = Column('year_built', Text())
+    adj_year_built = Column('adj_year_built', Text())
+    units = Column('units', Text())
+    bedrooms = Column('bedrooms', Text())
+    baths = Column('baths', Text())
+    siding_type = Column('siding_type', Text())
+    stories = Column('stories', Text())
+    building_square_footage = Column('building_square_footage', Text())
+    attached_garage_footage = Column('attached_garage_footage', Text())
+    lot_square_footage = Column('lot_square_footage', Text())
+    lot_acres = Column('lot_acres', Text())
+
+    # current_balance_due = Column('current_balance_due', Text())
+
+    # tax_year_1 = Column('tax_year_1', Text())
+    # tax_year_2 = Column('tax_year_2', Text())
+    # tax_year_3 = Column('tax_year_3', Text())
+    tax_year_1_assessed = Column('tax_year_1_assessed', Text())
+    tax_year_2_assessed = Column('tax_year_2_assessed', Text())
+    tax_year_3_assessed = Column('tax_year_3_assessed', Text())
+
+class DuvalSalesDataTemp(DeclarativeBase):
+    __tablename__ = "duvalCountySalesTemp"
+    id = Column(Integer, primary_key=True)
+    parcel = Column('parcel', String(20))
+    sale_price = Column('sale1_price', Text())
+    sale_date = Column('sale1_date', Text())
 
