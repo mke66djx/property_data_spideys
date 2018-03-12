@@ -149,7 +149,6 @@ class PierceCountyScraper(CSVFeedSpider):
         #Sales page provides sales records if any sales since '99
         return [item]
 
-
 class DuvalCountyScraper(CSVFeedSpider):
     name = "duval_county_spider"
     start_urls = [ "file:///C:/Users/ebeluli/Desktop/property_data_spideys/ParcelsLists/duval_parcels.csv"]
