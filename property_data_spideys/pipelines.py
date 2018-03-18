@@ -1,4 +1,4 @@
-from property_data_spideys.models import PierceCountyPropertyData,PierceCountySalesData,PiercePropertyDataTemp,PierceSalesDataTemp,DuvalSalesDataTemp,DuvalPropertyDataTemp,db_connect,create_table
+from property_data_spideys.models import CookPropertyDataTemp,CookCountyPropertyData,PiercePropertyDataTemp,PierceSalesDataTemp,DuvalSalesDataTemp,DuvalPropertyDataTemp,db_connect,create_table
 import functools
 from sqlalchemy.orm import (mapper,sessionmaker)
 
@@ -130,6 +130,66 @@ class DuvalFullPipeline(object):
         try:
             session.add(propertyDataTemp)
             session.add(salesDataTemp)
+            session.commit()
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+        return item
+
+class CookFullPipeline(object):
+    def __init__(self):
+        self.engine = db_connect()
+        create_table(self.engine)
+        self.Session = sessionmaker(bind=self.engine)
+
+    def open_spider(self, spider):
+        spider.myPipeline = self
+
+    def close_spider(self,spider):
+        self.upgrade()
+
+    def upgrade(self):
+        from alembic.config import Config
+        from alembic import command
+        alembic_cfg = Config(r"C:/Users/ebeluli/Desktop/property_data_spideys/alembic.ini")
+        with self.engine.begin() as connection:
+            alembic_cfg.attributes['connection'] = connection
+            command.upgrade(alembic_cfg, "110ec6566dca")
+            command.downgrade(alembic_cfg, "base")
+
+    def process_item(self,item,spider):
+        session = self.Session()
+
+        #Build a row
+        propertyDataTemp = CookPropertyDataTemp()
+
+        propertyDataTemp.parcel = item["parcel"]
+        propertyDataTemp.site_address_street = item["site_address_street"]
+        propertyDataTemp.site_address_city = item["site_address_city"]
+        propertyDataTemp.owner_name = item["owner_name"]
+        propertyDataTemp.site_address_zip = item["site_address_zip"]
+        propertyDataTemp.mailing_address_city_zip_state = item["mailing_address_city_zip_state"]
+        propertyDataTemp.lot_square_footage = item["lot_square_footage"]
+        propertyDataTemp.building_square_footage = item["building_square_footage"]
+        propertyDataTemp.current_year_assessed_value = item["current_year_assessed_value"]
+        propertyDataTemp.tax_year_3_assessed = item["prior_year_assessed_value"]
+        propertyDataTemp.property_use = item["property_use"]
+        propertyDataTemp.residence_type = item["residence_type"]
+        propertyDataTemp.units = item["units"]
+        propertyDataTemp.construction_type = item["construction_type"]
+        propertyDataTemp.full_bathrooms = item["full_bathrooms"]
+        propertyDataTemp.half_bathrooms = item["half_bathrooms"]
+        propertyDataTemp.central_air = item["central_air"]
+        propertyDataTemp.basement = item["basement"]
+        propertyDataTemp.garage_type = item["garage_type"]
+        propertyDataTemp.home_owner_exemption = item["home_owner_exemption"]
+        propertyDataTemp.senior_citizen_exemption = item["senior_citizen_exemption"]
+
+
+        try:
+            session.add(propertyDataTemp)
             session.commit()
         except:
             session.rollback()

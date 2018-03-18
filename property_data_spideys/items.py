@@ -44,10 +44,10 @@ class PierceCountyDescriptionItem(scrapy.Item):
 class DuvalCountyDescriptionItem(scrapy.Item):
     parcel = scrapy.Field()
     owner_name = scrapy.Field()
+    occupancy = scrapy.Field()
     site_address = scrapy.Field()
     mailing_address = scrapy.Field()
     property_type = scrapy.Field()
-    occupancy = scrapy.Field()
     building_square_footage = scrapy.Field()
     attached_garage_footage = scrapy.Field()
     year_built = scrapy.Field()
@@ -73,5 +73,35 @@ class DuvalCountyDescriptionItem(scrapy.Item):
     sewer = scrapy.Field()
     units = scrapy.Field()
     water = scrapy.Field()
+
+
+class CookCountyDescriptionItem(scrapy.Item):
+    parcel = scrapy.Field()
+    owner_name = scrapy.Field()
+    site_address_street = scrapy.Field()
+    site_address_city = scrapy.Field()
+    site_address_zip = scrapy.Field()
+    site_address_township = scrapy.Field()
+    mailing_address_city_zip_state = scrapy.Field()
+    mailing_address_street = scrapy.Field()
+    age = scrapy.Field()
+    lot_square_footage = scrapy.Field()
+    building_square_footage = scrapy.Field()
+    current_year_assessed_value = scrapy.Field()
+    prior_year_assessed_value = scrapy.Field()
+    property_use = scrapy.Field()
+    residence_type = scrapy.Field()
+    units = scrapy.Field()
+    construction_type = scrapy.Field()
+    full_bathrooms = scrapy.Field()
+    half_bathrooms = scrapy.Field()
+    basement = scrapy.Field()
+    central_air = scrapy.Field()
+    garage_type = scrapy.Field()
+    home_owner_exemption = scrapy.Field()
+    senior_citizen_exemption = scrapy.Field()
+
+
+
 
 

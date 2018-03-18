@@ -1,8 +1,8 @@
-"""PierceMigration
+"""cookmigration
 
-Revision ID: 65c4237f4c27
-Revises: 
-Create Date: 2018-03-11 20:53:39.913520
+Revision ID: 110ec6566dca
+Revises: 2849d9e93551
+Create Date: 2018-03-12 16:54:17.399421
 
 """
 from alembic import op
@@ -10,23 +10,20 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '65c4237f4c27'
+revision = '110ec6566dca'
+#down_revision = '2849d9e93551'
 down_revision = None
 branch_labels = None
 depends_on = None
 
-
 def upgrade():
-	op.drop_table('piercecounty')
-	op.drop_table('piercecountysales')
-	op.rename_table('pierceCountyTemp', 'piercecounty')
-	op.rename_table('pierceCountySalesTemp', 'piercecountysales')
+	op.drop_table('cookcounty')
+	op.rename_table('cookCountyTemp','cookcounty')
 
 	op.drop_table('pierceCountyTemp')
 	op.drop_table('pierceCountySalesTemp')
 	op.drop_table('duvalCountyTemp')
 	op.drop_table('duvalCountySalesTemp')
+
 def downgrade():
     pass
-
-

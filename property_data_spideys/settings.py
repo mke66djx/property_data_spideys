@@ -75,7 +75,9 @@ ITEM_PIPELINES = {
     'property_data_spideys.pipelines.PierceFullPipeline': 300,
     'property_data_spideys.pipelines.PierceRowPipeline': 300,
     'property_data_spideys.pipelines.DuvalFullPipeline': 300,
-    'property_data_spideys.pipelines.DuvalRowPipeline': 300
+    'property_data_spideys.pipelines.DuvalRowPipeline': 300,
+    'property_data_spideys.pipelines.CookFullPipeline': 300,
+    'property_data_spideys.pipelines.CookRowPipeline': 300
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)

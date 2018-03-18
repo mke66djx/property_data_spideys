@@ -1,6 +1,6 @@
 import scrapy
 from scrapy import signals
-from property_data_spideys.items import PierceCountyDescriptionItem,DuvalCountyDescriptionItem
+from property_data_spideys.items import PierceCountyDescriptionItem,DuvalCountyDescriptionItem,CookCountyDescriptionItem
 from scrapy.spiders import CSVFeedSpider
 from scrapy.xlib.pydispatch import dispatcher
 from property_data_spideys import pipelines
@@ -164,7 +164,7 @@ class DuvalCountyScraper(CSVFeedSpider):
 
     def parse_row(self,response,row):
         pin = row['parcel']
-        #General summary page, will be used for owner info
+        #General summary page, will b e used for owner info
         request = scrapy.Request('http://apps.coj.net/PAO_PropertySearch/Basic/Detail.aspx?RE='+pin, callback=self.parse_summary)
         request.meta['item'] = DuvalCountyDescriptionItem()
         request.meta['pin'] = pin
@@ -186,8 +186,6 @@ class DuvalCountyScraper(CSVFeedSpider):
 
         site_address_street = self.check_path(response.xpath('//*[@id="ctl00_cphBody_lblPrimarySiteAddressLine1"]/text()').extract())
         site_address_cityzip = self.check_path(response.xpath('//*[@id="ctl00_cphBody_lblPrimarySiteAddressLine2"]/text()').extract())
-
-        print("Parcel!!!!",parcel)
 
         property_use = self.check_path(response.xpath('//*[@id="ctl00_cphBody_lblPropertyUse"]/text()').extract())
         year_built = self.check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_lblYearBuilt"]/text()').extract())
@@ -247,6 +245,104 @@ class DuvalCountyScraper(CSVFeedSpider):
         #Need to get taxes owed
         #http://fl-duval-taxcollector.publicaccessnow.com/propertytaxsearch/accountdetail.aspx?p=019089-0000
 
-        #Tax page will be used for property tax paid/owed and tax assesment
         yield item
 
+
+class CookCountyScraper(CSVFeedSpider):
+    name = "cook_county_spider"
+    start_urls = [ "file:///C:/Users/ebeluli/Desktop/property_data_spideys/ParcelsLists/cook_parcels.csv"]
+    #start_urls = [ "file:///home/edit/GruntJS/propertyDataScraper/ParcelsLists/parcels.csv"]
+
+    custom_settings = {
+        'ITEM_PIPELINES': {'property_data_spideys.pipelines.CookFullPipeline': 300}
+        }
+
+    def __init__(self):
+        dispatcher.connect(self.spider_closed, signals.spider_closed)
+
+    def spider_closed(self, spider):
+        pass
+
+    def parse_row(self,response,row):
+        pin = row['parcel']
+
+        #General summary page, will be used for owner info
+        request = scrapy.Request('http://www.cookcountypropertyinfo.com/cookviewerpinresults.aspx?pin='+pin,dont_filter = True,callback=self.parse_summary)
+        request.meta['item'] = CookCountyDescriptionItem()
+        request.meta['pin'] = pin
+        return [request]
+
+    def check_path(self, xpath_return):
+        if len(xpath_return) == 1:
+            return xpath_return[0]
+        else:
+            return None
+
+    def parse_summary(self, response):
+        site_address_street = self.check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyAddress"]/text()').extract())
+        site_address_city = self.check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyCity"]/text()').extract())
+        site_address_zip = self.check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyZip"]/text()').extract())
+        site_township = self.check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyTownship"]/text()').extract())
+
+        owner_name = self.check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyMailingName"]/text()').extract())
+        mailing_address_street = self.check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyMailingAddress"]/text()').extract())
+        mailing_city_zip_state = self.check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyMailingCityStateZip"]/text()').extract())
+
+        lot_square_footage = self.check_path(response.xpath('//*[@id="ContentPlaceHolder1_TaxYearInfo_propertyLotSize"]/text()').extract())
+        building_square_footage = self.check_path(response.xpath('//*[@id="ContentPlaceHolder1_TaxYearInfo_propertyBuildingSize"]/text()').extract())
+
+        item = response.meta['item']
+        pin = response.meta['pin']
+        item['parcel'] = pin
+        item['owner_name'] = owner_name
+        item['site_address_street'] = site_address_street
+        item['site_address_city'] = site_address_city
+        item['site_address_zip'] = site_address_zip
+        item['site_address_township'] = site_township
+
+        item['mailing_address_street'] = mailing_address_street
+        item['mailing_address_city_zip_state'] = mailing_city_zip_state
+
+        item['lot_square_footage'] = lot_square_footage
+        item['building_square_footage'] = building_square_footage
+
+        return [scrapy.Request('http://www.cookcountyassessor.com/Property.aspx?mode=details&pin='+pin, callback=self.parse_characteristics,meta={'item': item,'pin':pin})]
+
+    def parse_characteristics(self, response):
+
+        parcel = self.check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropInfoPIN"]/text()').extract())
+        current_year_assessed_value  = self.check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharMktValCurrYear"]/text()').extract())
+        prior_year_assessed_value = self.check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharMktValPrevYear"]/text()').extract())
+        property_use = self.check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharUse"]/text()').extract())
+        residence_type = self.check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharResType"]/text()').extract())
+        units = self.check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharApts"]/text()').extract())
+        construction_type = self.check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharExtConst"]/text()').extract())
+        full_bathrooms = self.check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharFullBaths"]/text()').extract())
+        half_bathrooms = self.check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharHalfBaths"]/text()').extract())
+        basement = self.check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharBasement"]/text()').extract())
+        central_air = self.check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharCentAir"]/text()').extract())
+        garage_type = self.check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharGarage"]/text()').extract())
+        age = self.check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharAge"]/text()').extract())
+
+        home_owner_exemption = self.check_path(response.xpath('//*[@id="exemptions"]/div[2]/div[1]/span[2]/text()').extract())
+        senior_citizen_exemption = self.check_path(response.xpath('//*[@id="exemptions"]/div[2]/div[2]/span[2]/text()').extract())
+
+        item = response.meta['item']
+        item['parcel'] = str(parcel).replace('-', '')
+        item['current_year_assessed_value'] = current_year_assessed_value
+        item['prior_year_assessed_value'] = prior_year_assessed_value
+        item['property_use'] = property_use
+        item['residence_type'] = residence_type
+        item['units'] = units
+        item['construction_type'] = construction_type
+        item['full_bathrooms'] = full_bathrooms
+        item['half_bathrooms'] = half_bathrooms
+        item['basement'] = basement
+        item['central_air'] = central_air
+        item['garage_type'] = garage_type
+        item['age'] = age
+
+        item['home_owner_exemption'] = home_owner_exemption
+        item['senior_citizen_exemption'] = senior_citizen_exemption
+
+        return [item]
