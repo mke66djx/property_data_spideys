@@ -9,9 +9,14 @@ import scrapy
 
 class PierceCountyDescriptionItem(scrapy.Item):
     owner_name = scrapy.Field()
+    owner_last_name = scrapy.Field()
+    owner_first_name = scrapy.Field()
     parcel = scrapy.Field()
     site_address = scrapy.Field()
     mailing_address = scrapy.Field()
+    mail_city = scrapy.Field()
+    mail_state = scrapy.Field()
+    mail_zip = scrapy.Field()
     tax_year_1 = scrapy.Field()
     tax_year_2 = scrapy.Field()
     tax_year_3 = scrapy.Field()

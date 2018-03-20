@@ -4,6 +4,7 @@ from property_data_spideys.items import PierceCountyDescriptionItem,DuvalCountyD
 from scrapy.spiders import CSVFeedSpider
 from scrapy.xlib.pydispatch import dispatcher
 from property_data_spideys import pipelines
+import locale
 
 class PierceCountyScraper(CSVFeedSpider):
     name = "pierce_county_spider"
@@ -14,6 +15,7 @@ class PierceCountyScraper(CSVFeedSpider):
 
     def __init__(self):
         dispatcher.connect(self.spider_closed, signals.spider_closed)
+        locale.setlocale(locale.LC_ALL, '')
 
     def spider_closed(self, spider):
         pass
@@ -37,44 +39,67 @@ class PierceCountyScraper(CSVFeedSpider):
     def parse_summary(self, response):
 
         parcel = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[2]/tr/td[1]/table/tr[2]/td[2]/text()').extract())
+        owner_name = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[2]/tr/td[2]/table/tr[2]/td[2]/text()').extract())
         site_address = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[2]/tr/td[1]/table/tr[3]/td[2]/text()').extract())
-        mailing_address = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[2]/tr/td[2]/table/tr[2]/td[2]/text()').extract())\
+        mailing_address_street = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[2]/tr/td[2]/table/tr[3]/td[2]/text()[1]').extract())
+        mailing_address_city_zip = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[2]/tr/td[2]/table/tr[3]/td[2]/text()[2]').extract())
+
+        #-------------------------------Owner Name------------------------------------#
+        owner_name_list = str(owner_name).split()
+        owner_last_name = owner_name_list[0]
+        owner_first_name = owner_name_list[1]
+
+        #----------------------Mail Address Processing Splitting-----------------------#
+        mail_streetAddress = str(mailing_address_street).replace('\n', '').replace('\t','').replace('\r','')
+        cityStateZipList = str(mailing_address_city_zip).split()
+        mail_city = " ".join(cityStateZipList[0:(len(cityStateZipList)-2)])
+        mail_state = cityStateZipList[(len(cityStateZipList)-2)]
+        mail_zip = cityStateZipList[len(cityStateZipList)-1]
+        mail_fullAddress = ",".join([mail_streetAddress,mail_city,mail_state,mail_zip])
 
         item = response.meta['item']
         pin = response.meta['pin']
 
         item['parcel'] = parcel
-        item['owner_name'] = 'NA'
+        item['owner_name'] = owner_name
+        item['owner_last_name'] = owner_last_name
+        item['owner_first_name'] = owner_first_name
         item['site_address'] = site_address
-        item['mailing_address'] = mailing_address
+        item['mailing_address'] = mail_fullAddress
+        item['mail_city'] = mail_city
+        item['mail_state'] = mail_state
+        item['mail_zip'] = mail_zip
 
         #Tax page will be used for property tax paid/owed and tax assesment
         return [scrapy.Request('https://epip.co.pierce.wa.us/cfapps/atr/epip/taxvalue.cfm?parcel='+pin, callback=self.parse_taxes,meta={'item': item,'pin':pin})]
-
 
     def parse_taxes(self, response):
 
         tax_year_1 = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr/td/table/tr[2]/td/table/tr[2]/td[1]/text()').extract())
         tax_year_2 = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr/td/table/tr[2]/td/table/tr[3]/td[1]/text()').extract())
         tax_year_3 = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr/td/table/tr[2]/td/table/tr[4]/td[1]/text()').extract())
-
         tax_year_1_assessed = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr/td/table/tr[2]/td/table/tr[2]/td[4]/text()').extract())
         tax_year_2_assessed = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr/td/table/tr[2]/td/table/tr[3]/td[4]/text()').extract())
         tax_year_3_assessed = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr/td/table/tr[2]/td/table/tr[4]/td[4]/text()').extract())
-
         current_balance_due = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[4]/tr/td[1]/table[1]/tr[4]/td/table/tr[1]/td/table/tr/td[1]/strong/text()').extract())
+
+       #------------------------------Format Money Values-----------------------------------#
+        tax_year_1_assessed_formatted = float(str(tax_year_1_assessed).replace(',', ''))
+        tax_year_2_assessed_formatted = float(str(tax_year_2_assessed).replace(',', ''))
+        tax_year_3_assessed_formatted = float(str(tax_year_3_assessed).replace(',', ''))
+        current_balance_formatted = float(((str(current_balance_due).split()[2])).replace(',', ''))
 
         item = response.meta['item']
         pin = response.meta['pin']
 
-        item['tax_year_1'] = tax_year_1
-        item['tax_year_2'] = tax_year_2
-        item['tax_year_3'] = tax_year_3
-        item['tax_year_1_assessed'] = tax_year_1_assessed
-        item['tax_year_2_assessed'] = tax_year_2_assessed
-        item['tax_year_3_assessed'] = tax_year_3_assessed
+        item['tax_year_1'] = int(tax_year_1)
+        item['tax_year_2'] = int(tax_year_2)
+        item['tax_year_3'] = int(tax_year_3)
+        item['tax_year_1_assessed'] = tax_year_1_assessed_formatted
+        item['tax_year_2_assessed'] = tax_year_2_assessed_formatted
+        item['tax_year_3_assessed'] = tax_year_3_assessed_formatted
 
-        item['current_balance_due'] = current_balance_due
+        item['current_balance_due'] = current_balance_formatted
 
         #Land page will give us lot size/square footage and utility types installed or info on the driveway(paved unpaved)(optional)
         return [scrapy.Request('https://epip.co.pierce.wa.us/cfapps/atr/epip/land.cfm?parcel='+pin, callback=self.parse_land,meta={'item': item,'pin':pin})]
@@ -91,8 +116,8 @@ class PierceCountyScraper(CSVFeedSpider):
         item = response.meta['item']
         pin = response.meta['pin']
 
-        item['lot_square_footage'] = lot_square_footage
-        item['lot_acres'] = acres
+        item['lot_square_footage'] = int(str(lot_square_footage).replace(',', ''))
+        item['lot_acres'] = float(acres)
 
         item['electric'] = electric
         item['sewer'] = sewer
@@ -123,15 +148,15 @@ class PierceCountyScraper(CSVFeedSpider):
 
         item['property_type'] = property_type
         item['occupancy'] = occupancy
-        item['building_square_footage'] = square_footage
-        item['attached_garage_footage'] = attached_garage_footage
-        item['year_built'] = year_built
-        item['adj_year_built'] = adj_year_built
-        item['stories'] = stories
-        item['bedrooms'] = bedrooms
-        item['baths'] = baths
+        item['building_square_footage'] = int(str(square_footage).replace(',', ''))
+        item['attached_garage_footage'] = int(str(attached_garage_footage).replace(',', ''))
+        item['year_built'] = int(year_built)
+        item['adj_year_built'] = int(adj_year_built)
+        item['stories'] = float(stories)
+        item['bedrooms'] = int(bedrooms)
+        item['baths'] = float(baths)
         item['siding_type'] = siding_type
-        item['units'] = units
+        item['units'] = int(units)
 
         #Sales page provides sales records if any sales since '99
         return [scrapy.Request('https://epip.co.pierce.wa.us/cfapps/atr/epip/sales.cfm?parcel='+pin, callback=self.parse_sales,meta={'item': item,'pin':pin})]
