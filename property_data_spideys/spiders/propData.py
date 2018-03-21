@@ -15,7 +15,6 @@ class PierceCountyScraper(CSVFeedSpider):
 
     def __init__(self):
         dispatcher.connect(self.spider_closed, signals.spider_closed)
-        locale.setlocale(locale.LC_ALL, '')
 
     def spider_closed(self, spider):
         pass
@@ -316,20 +315,44 @@ class CookCountyScraper(CSVFeedSpider):
         lot_square_footage = self.check_path(response.xpath('//*[@id="ContentPlaceHolder1_TaxYearInfo_propertyLotSize"]/text()').extract())
         building_square_footage = self.check_path(response.xpath('//*[@id="ContentPlaceHolder1_TaxYearInfo_propertyBuildingSize"]/text()').extract())
 
+        #--------------------Name Checks------------------------#
+        owner_first_last_list = str(owner_name).split()
+
+        if "LLC" in owner_name:
+            owner_first = "LLC"
+            owner_last = "LLC"
+        else:
+            owner_first_last_list = str(owner_name).split()
+            owner_first = owner_first_last_list[0]
+            owner_last = owner_first_last_list[1]
+
+        #-------------------Mail Address Processing--------------#
+        mail_cityStateZipList = str(mailing_city_zip_state).split(",")
+        mail_state_zip_list = mail_cityStateZipList[1].split(" ")
+        mail_city = mail_cityStateZipList[0]
+        mail_state = mail_state_zip_list[1]
+        mail_zip = mail_state_zip_list[2]
+
+
         item = response.meta['item']
         pin = response.meta['pin']
         item['parcel'] = pin
         item['owner_name'] = owner_name
-        item['site_address_street'] = site_address_street
+        item['owner_first'] = owner_first
+        item['owner_last'] = owner_last
+
+        item['site_address'] = ",".join([site_address_street,site_address_city,"IL",site_address_zip])
         item['site_address_city'] = site_address_city
         item['site_address_zip'] = site_address_zip
         item['site_address_township'] = site_township
 
-        item['mailing_address_street'] = mailing_address_street
-        item['mailing_address_city_zip_state'] = mailing_city_zip_state
+        item['mailing_address'] = ",".join([mailing_address_street,mail_city,mail_state,mail_zip])
+        item['mail_city'] = mail_city
+        item['mail_state'] = mail_state
+        item['mail_zip'] = mail_zip
 
-        item['lot_square_footage'] = lot_square_footage
-        item['building_square_footage'] = building_square_footage
+        item['lot_square_footage'] = int(str(lot_square_footage).replace(',', ''))
+        item['building_square_footage'] = int(str(building_square_footage).replace(',', ''))
 
         return [scrapy.Request('http://www.cookcountyassessor.com/Property.aspx?mode=details&pin='+pin, callback=self.parse_characteristics,meta={'item': item,'pin':pin})]
 
@@ -354,18 +377,18 @@ class CookCountyScraper(CSVFeedSpider):
 
         item = response.meta['item']
         item['parcel'] = str(parcel).replace('-', '')
-        item['current_year_assessed_value'] = current_year_assessed_value
-        item['prior_year_assessed_value'] = prior_year_assessed_value
+        item['current_year_assessed_value'] = float(str(current_year_assessed_value).replace(',', '').replace('$',""))
+        item['prior_year_assessed_value'] = float(str(prior_year_assessed_value).replace(',', '').replace('$',""))
         item['property_use'] = property_use
         item['residence_type'] = residence_type
-        item['units'] = units
+        item['units'] = int(units)
         item['construction_type'] = construction_type
-        item['full_bathrooms'] = full_bathrooms
-        item['half_bathrooms'] = half_bathrooms
+        item['full_bathrooms'] = float(full_bathrooms)
+        item['half_bathrooms'] = float(half_bathrooms)
         item['basement'] = basement
         item['central_air'] = central_air
         item['garage_type'] = garage_type
-        item['age'] = age
+        item['age'] = int(age)
 
         item['home_owner_exemption'] = home_owner_exemption
         item['senior_citizen_exemption'] = senior_citizen_exemption

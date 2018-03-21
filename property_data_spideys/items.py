@@ -83,12 +83,19 @@ class DuvalCountyDescriptionItem(scrapy.Item):
 class CookCountyDescriptionItem(scrapy.Item):
     parcel = scrapy.Field()
     owner_name = scrapy.Field()
-    site_address_street = scrapy.Field()
+    owner_first = scrapy.Field()
+    owner_last = scrapy.Field()
+
+    site_address = scrapy.Field()
     site_address_city = scrapy.Field()
     site_address_zip = scrapy.Field()
     site_address_township = scrapy.Field()
-    mailing_address_city_zip_state = scrapy.Field()
-    mailing_address_street = scrapy.Field()
+
+    mailing_address= scrapy.Field()
+    mail_city = scrapy.Field()
+    mail_state = scrapy.Field()
+    mail_zip = scrapy.Field()
+
     age = scrapy.Field()
     lot_square_footage = scrapy.Field()
     building_square_footage = scrapy.Field()

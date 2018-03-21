@@ -173,15 +173,24 @@ class CookFullPipeline(object):
         propertyDataTemp = CookPropertyDataTemp()
 
         propertyDataTemp.parcel = item["parcel"]
-        propertyDataTemp.site_address_street = item["site_address_street"]
-        propertyDataTemp.site_address_city = item["site_address_city"]
         propertyDataTemp.owner_name = item["owner_name"]
+        propertyDataTemp.owner_first = item["owner_first"]
+        propertyDataTemp.owner_last = item["owner_last"]
+
+        propertyDataTemp.site_address = item["site_address"]
+        propertyDataTemp.site_address_city = item["site_address_city"]
         propertyDataTemp.site_address_zip = item["site_address_zip"]
-        propertyDataTemp.mailing_address_city_zip_state = item["mailing_address_city_zip_state"]
+        propertyDataTemp.site_address_township = item["site_address_township"]
+
+        propertyDataTemp.mailing_address = item["mailing_address"]
+        propertyDataTemp.mail_city = item["mail_city"]
+        propertyDataTemp.mail_state = item["mail_state"]
+        propertyDataTemp.mail_zip = item["mail_zip"]
+
         propertyDataTemp.lot_square_footage = item["lot_square_footage"]
         propertyDataTemp.building_square_footage = item["building_square_footage"]
         propertyDataTemp.current_year_assessed_value = item["current_year_assessed_value"]
-        propertyDataTemp.tax_year_3_assessed = item["prior_year_assessed_value"]
+        propertyDataTemp.prior_year_assessed_value = item["prior_year_assessed_value"]
         propertyDataTemp.property_use = item["property_use"]
         propertyDataTemp.residence_type = item["residence_type"]
         propertyDataTemp.units = item["units"]
