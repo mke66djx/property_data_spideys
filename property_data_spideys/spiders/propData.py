@@ -6,7 +6,10 @@ from scrapy.xlib.pydispatch import dispatcher
 from property_data_spideys import pipelines
 import locale
 
-class PierceCountyScraper(CSVFeedSpider):
+class spiderBaseFunctions():
+    pass
+
+class PierceCountyScraper(CSVFeedSpider,spiderBaseFunctions):
     name = "pierce_county_spider"
     start_urls = [ "file:///C:/Users/ebeluli/Desktop/property_data_spideys/ParcelsLists/parcels.csv"]
     #start_urls = [ "file:///home/edit/GruntJS/propertyDataScraper/ParcelsLists/parcels.csv"]
@@ -43,7 +46,7 @@ class PierceCountyScraper(CSVFeedSpider):
         mailing_address_street = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[2]/tr/td[2]/table/tr[3]/td[2]/text()[1]').extract())
         mailing_address_city_zip = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[2]/tr/td[2]/table/tr[3]/td[2]/text()[2]').extract())
 
-        #-------------------------------Owner Name------------------------------------#
+        #-------------------------------Owner Name Splitting---------------------------#
         owner_name_list = str(owner_name).split()
         owner_last_name = owner_name_list[0]
         owner_first_name = owner_name_list[1]
@@ -212,12 +215,14 @@ class DuvalCountyScraper(CSVFeedSpider):
         site_address_cityzip = self.check_path(response.xpath('//*[@id="ctl00_cphBody_lblPrimarySiteAddressLine2"]/text()').extract())
 
         property_use = self.check_path(response.xpath('//*[@id="ctl00_cphBody_lblPropertyUse"]/text()').extract())
+        building_type = self.check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_lblBuildingType"]/text()').extract())
+
         year_built = self.check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_lblYearBuilt"]/text()').extract())
         stories = self.check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingAttributes"]/tr[2]/td[2]/text()').extract())
         bedrooms = self.check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingAttributes"]/tr[3]/td[2]/text()').extract())
         bathrooms = self.check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingAttributes"]/tr[4]/td[2]/text()').extract())
         units = self.check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingAttributes"]/tr[5]/td[2]/text()').extract())
-        total_heated_sqaure_footage = self.check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingArea"]/tr[7]/td[3]/text()').extract())
+        total_heated_sqaure_footage = self.check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingArea"]/tr[last()]/td[3]/text()').extract())
 
         heating_type = self.check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingElements"]/tr[9]/td[3]/text()').extract())
         ac_type = self.check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingElements"]/tr[10]/td[3]/text()').extract())
@@ -233,38 +238,57 @@ class DuvalCountyScraper(CSVFeedSpider):
 
         total_square_footage = self.check_path(response.xpath('//*[@id="ctl00_cphBody_lblTotalArea1"]/text()').extract())
 
-        item = response.meta['item']
+        exemptions_none = self.check_path(response.xpath('//*[@id="ctl00_cphBody_lblExemptionsCountyNoData"]/li/text()').extract())
 
+        #-----------------------------------------Handle Exemptions-------------------------------------------#
+        senior_exemption,homestead_exemption = 0,0
+        if exemptions_none == None:
+            exemption_1 = self.check_path(response.xpath('//*[@id="ctl00_cphBody_ul_propExemptionsCounty"]/li[1]/span[1]/text()').extract())
+            exemption_2 = self.check_path(response.xpath('//*[@id="ctl00_cphBody_ul_propExemptionsCounty"]/li[2]/span[1]/text()').extract())
+            exemption_3 = self.check_path(response.xpath('//*[@id="ctl00_cphBody_ul_propExemptionsCounty"]/li[3]/span[1]/text()').extract())
+            exemption_4 = self.check_path(response.xpath('//*[@id="ctl00_cphBody_ul_propExemptionsCounty"]/li[4]/span[1]/text()').extract())
+            exemption_5 = self.check_path(response.xpath('//*[@id="ctl00_cphBody_ul_propExemptionsCounty"]/li[4]/span[1]/text()').extract())
+
+            exemption_list_filtered = []
+            for x in exemption_1,exemption_2,exemption_3,exemption_4,exemption_5:
+                if x == None:
+                    exemption_list_filtered.append('NA')
+                else:
+                    exemption_list_filtered.append(x)
+
+            expemption_string = '\t'.join(exemption_list_filtered)
+            if "Senior" in expemption_string:
+                senior_exemption = 1
+            if "Homestead" in expemption_string :
+                homestead_exemption = 1
+
+        item = response.meta['item']
         item['parcel'] = str(parcel).replace('-', '')
         item['owner_name'] = owner_name
         item['site_address'] = ''.join([str(site_address_street),str(site_address_cityzip)])
         item['mailing_address'] = ''.join([str(mailing_address_street),str(mailing_address_cityzip)])
         item['property_type'] = property_use
-        item['occupancy'] = 'NA'
-        item['building_square_footage'] = total_heated_sqaure_footage
-        item['attached_garage_footage'] = 'NA'
-        item['year_built'] = year_built
-        item['adj_year_built'] = 'NA'
-        item['stories'] = stories
-        item['bedrooms'] = bedrooms
-        item['baths'] = bathrooms
+        item['building_type'] = building_type
+        item['building_square_footage'] = int(total_heated_sqaure_footage)
+        item['year_built'] = int(year_built)
+        item['stories'] = float(stories)
+        item['bedrooms'] = float(bedrooms)
+        item['baths'] = float(bathrooms)
         item['siding_type'] = 'NA'
-        item['units'] = units
+        item['units'] = float(units)
         item['sale1_price'] = sale1_price
         item['sale1_date'] = sale1_date
         item['sale2_price'] = sale2_price
         item['sale2_date'] = sale2_date
-        item['tax_year_1'] = 'NA'
-        item['tax_year_2'] = 'NA'
-        item['tax_year_3'] = 'NA'
-        item['tax_year_1_assessed'] = tax_market_value_year1
-        item['tax_year_2_assessed'] = tax_market_value_year2
-        item['tax_year_3_assessed'] = 'NA'
-        item['lot_square_footage'] = total_square_footage
+        item['tax_year_1_assessed'] = float((tax_market_value_year1).replace(',', '').replace('$', ''))
+        item['tax_year_2_assessed'] = float((tax_market_value_year2).replace(',', '').replace('$', ''))
+        item['lot_square_footage'] = int(total_square_footage)
         item['lot_acres'] = 'NA'
         item['electric'] = 'NA'
         item['sewer'] = 'NA'
         item['water'] = 'NA'
+        item['homestead_exemption'] = homestead_exemption
+        item['senior_exemption'] = senior_exemption
 
         #Need to get taxes owed
         #http://fl-duval-taxcollector.publicaccessnow.com/propertytaxsearch/accountdetail.aspx?p=019089-0000
