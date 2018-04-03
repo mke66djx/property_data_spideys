@@ -24,6 +24,8 @@ def upgrade():
 	op.drop_table('pierceCountySalesTemp')
 	op.drop_table('duvalCountyTemp')
 	op.drop_table('duvalCountySalesTemp')
+	op.drop_table('maricopaCountyTemp')
+
 
 def downgrade():
     pass

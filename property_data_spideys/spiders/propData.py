@@ -8,12 +8,12 @@ from scrapy.xlib.pydispatch import dispatcher
 from property_data_spideys import pipelines
 import locale
 import os
+import os.path
 
 def getStartUrlFilePath(parcel_file):
     relative_file_path = 'ParcelsLists/'+parcel_file
-    dirname = os.getcwd()
-    filepath = os.path.join(os.getcwd(), relative_file_path)
-    start_url_path = "file://"+filepath
+    filepath = os.path.abspath(os.path.join(os.getcwd(), relative_file_path))
+    start_url_path = "file:///"+filepath
     return start_url_path
 
 def check_path(xpath_return):
@@ -180,6 +180,7 @@ class PierceCountyScraper(CSVFeedSpider):
 
         #Sales page provides sales records if any sales since '99
         return [item]
+
 
 class DuvalCountyScraper(CSVFeedSpider):
     name = "duval_county_spider"
@@ -557,7 +558,9 @@ class MaricopaAPI(CSVFeedSpider):
         site_zip = site_zip_city_list[len(site_zip_city_list)-1]
         site_city = " ".join(site_zip_city_list[0:len(site_zip_city_list)-1])
 
-
+        item['parcel'] = pin
+        item['owner_first'] = owner_first
+        item['owner_last'] = owner_last
         item['owner_name'] = owner_name
         item['owner_full_address'] = owner_full_address
         item['owner_street_address1'] = owner_street_address1
@@ -569,13 +572,13 @@ class MaricopaAPI(CSVFeedSpider):
         item['site_city'] = site_city
         item['site_zip'] = site_zip
         item['property_description'] = property_description
-        item['lot_size'] = lot_size
+        item['lot_size'] = float(lot_size)
         item['property_type'] = property_type
         item['rental'] = rental
-        item['value_0'] = value_0
-        item['value_1'] = value_1
-        item['value_2'] = value_2
+        item['value_0'] = float(value_0)
+        item['value_1'] = float(value_1)
+        item['value_2'] = float(value_2)
         item['last_deed_date'] = last_deed_date
-        item['last_sale_price'] = last_sale_price
+        item['last_sale_price'] = float(last_sale_price)
 
         yield item

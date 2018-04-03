@@ -116,7 +116,10 @@ class CookCountyDescriptionItem(scrapy.Item):
     foreclosure_date = scrapy.Field()
 
 class MaricopaCountyDescriptionItem(scrapy.Item):
+    parcel = scrapy.Field()
     owner_name = scrapy.Field()
+    owner_first = scrapy.Field()
+    owner_last = scrapy.Field()
     owner_full_address = scrapy.Field()
     owner_street_address1 = scrapy.Field()
     owner_city = scrapy.Field()

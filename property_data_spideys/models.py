@@ -129,6 +129,38 @@ class CookCountyPropertyData(DeclarativeBase):
     foreclosure_date = Column('foreclosure_date', Text())
 
 
+class MaricopaCountyPropertyData(DeclarativeBase):
+    __tablename__ = "maricopaCounty"
+    parcel = Column('parcel',String(20),primary_key=True)
+    owner_name = Column('owner_name', Text())
+    owner_first = Column('owner_first', Text())
+    owner_last = Column('owner_last', Text())
+
+    owner_full_address = Column('owner_full_address', Text())
+    owner_street_address1 = Column('owner_street_address1', Text())
+    owner_city = Column('owner_city', Text())
+    owner_state = Column('owner_state', Text())
+    owner_zip= Column('owner_zip', Text())
+
+    full_property_address= Column('full_property_address', Text())
+    site_street= Column('site_street', Text())
+    site_city= Column('site_city', Text())
+    site_zip= Column('site_zip', Text())
+
+    lot_size = Column('lot_size', Float(6))
+
+    property_description= Column('property_description', Text())
+    property_type= Column('property_type', Text())
+
+    rental= Column('rental', Text())
+    value_0= Column('value_0', Float(8))
+    value_1= Column('value_1', Float(8))
+    value_2= Column('value_2', Float(8))
+
+    last_deed_date= Column('last_deed_date', Text())
+    last_sale_price= Column('last_sale_price', Float(8))
+
+
 #--------------------------------------------------------------------------
 #-------The temps below are used when doing full table updates-------------
 #--------------------------------------------------------------------------
@@ -240,3 +272,33 @@ class CookPropertyDataTemp(DeclarativeBase):
     foreclosure = Column('foreclosure', Text())
     foreclosure_date = Column('foreclosure_date', Text())
 
+class MaricopaPropertyDataTemp(DeclarativeBase):
+    __tablename__ = "maricopaCountyTemp"
+    parcel = Column('parcel',String(20),primary_key=True)
+    owner_name = Column('owner_name', Text())
+    owner_first = Column('owner_first', Text())
+    owner_last = Column('owner_last', Text())
+
+    owner_full_address = Column('owner_full_address', Text())
+    owner_street_address1 = Column('owner_street_address1', Text())
+    owner_city = Column('owner_city', Text())
+    owner_state = Column('owner_state', Text())
+    owner_zip= Column('owner_zip', Text())
+
+    full_property_address= Column('full_property_address', Text())
+    site_street= Column('site_street', Text())
+    site_city= Column('site_city', Text())
+    site_zip= Column('site_zip', Text())
+
+    lot_size = Column('lot_size', Integer())
+
+    property_description= Column('property_description', Text())
+    property_type= Column('property_type', Text())
+
+    rental= Column('rental', Text())
+    value_0= Column('value_0', Text())
+    value_1= Column('value_1', Text())
+    value_2= Column('value_2', Text())
+
+    last_deed_date= Column('last_deed_date', Text())
+    last_sale_price= Column('last_sale_price', Text())

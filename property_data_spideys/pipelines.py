@@ -1,4 +1,4 @@
-from property_data_spideys.models import CookPropertyDataTemp,CookCountyPropertyData,PiercePropertyDataTemp,PierceSalesDataTemp,DuvalSalesDataTemp,DuvalPropertyDataTemp,db_connect,create_table
+from property_data_spideys.models import CookPropertyDataTemp,MaricopaPropertyDataTemp,PiercePropertyDataTemp,PierceSalesDataTemp,DuvalSalesDataTemp,DuvalPropertyDataTemp,db_connect,create_table
 import functools
 from sqlalchemy.orm import (mapper,sessionmaker)
 #---------------------------------------------------------------------------------------------------------
@@ -233,43 +233,42 @@ class MaricopaFullPipeline(object):
         alembic_cfg = Config(r"C:/Users/ebeluli/Desktop/property_data_spideys/alembic.ini")
         with self.engine.begin() as connection:
             alembic_cfg.attributes['connection'] = connection
-            command.upgrade(alembic_cfg, "2849d9e93551")
+            command.upgrade(alembic_cfg, "9dcae9ce3303")
             command.downgrade(alembic_cfg, "base")
 
     def process_item(self,item,spider):
         session = self.Session()
 
-        #Build a row
-        propertyDataTemp = DuvalPropertyDataTemp()
-        salesDataTemp = DuvalSalesDataTemp()
+        propertyDataTemp = MaricopaPropertyDataTemp()
 
         propertyDataTemp.parcel = item["parcel"]
-        propertyDataTemp.mailing_address = item["mailing_address"]
         propertyDataTemp.owner_name = item["owner_name"]
-        propertyDataTemp.site_address = item["site_address"]
+        propertyDataTemp.owner_first = item["owner_first"]
+        propertyDataTemp.owner_last = item["owner_last"]
+        propertyDataTemp.owner_full_address = item["owner_full_address"]
+        propertyDataTemp.owner_street_address1 = item["owner_street_address1"]
+        propertyDataTemp.owner_city = item["owner_city"]
+        propertyDataTemp.owner_state = item["owner_state"]
+        propertyDataTemp.owner_zip = item["owner_zip"]
+        propertyDataTemp.full_property_address = item["full_property_address"]
+        propertyDataTemp.site_street = item["site_street"]
+        propertyDataTemp.site_city = item["site_city"]
+        propertyDataTemp.site_zip = item["site_zip"]
+        propertyDataTemp.property_description = item["property_description"]
+        propertyDataTemp.lot_size = item["lot_size"]
         propertyDataTemp.property_type = item["property_type"]
-        propertyDataTemp.building_type = item["building_type"]
-        propertyDataTemp.year_built = item["year_built"]
-        propertyDataTemp.building_square_footage = item["building_square_footage"]
-        propertyDataTemp.units = item["units"]
-        propertyDataTemp.bedrooms = item["bedrooms"]
-        propertyDataTemp.baths = item["baths"]
-        propertyDataTemp.siding_type = item["siding_type"]
-        propertyDataTemp.stories = item["stories"]
-        propertyDataTemp.lot_square_footage = item["lot_square_footage"]
         #propertyDataTemp.current_balance_due = item["current_balance_due"]
-        propertyDataTemp.tax_year_1_assessed = item["tax_year_1_assessed"]
-        propertyDataTemp.tax_year_2_assessed = item["tax_year_2_assessed"]
-        propertyDataTemp.homestead_exemption = item["homestead_exemption"]
-        propertyDataTemp.senior_exemption = item["senior_exemption"]
+        propertyDataTemp.rental = item["rental"]
+        propertyDataTemp.value_0 = item["value_0"]
+        propertyDataTemp.value_1 = item["value_1"]
+        propertyDataTemp.value_2 = item["value_2"]
 
-        salesDataTemp.tax_year_1_assessed = item["sale1_price"]
-        salesDataTemp.tax_year_2_assessed = item["sale1_date"]
+        propertyDataTemp.last_deed_date = item["last_deed_date"]
+        propertyDataTemp.last_sale_price = item["last_sale_price"]
 
 
         try:
             session.add(propertyDataTemp)
-            session.add(salesDataTemp)
             session.commit()
         except:
             session.rollback()
