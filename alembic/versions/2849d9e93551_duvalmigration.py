@@ -18,15 +18,14 @@ depends_on = None
 
 
 def upgrade():
-	op.drop_table('duvalcounty')
-	op.drop_table('duvalcountysales')
-	op.rename_table('duvalCountyTemp', 'duvalcounty')
-	op.rename_table('duvalCountySalesTemp', 'duvalcountysales')
+	op.drop_table('duvalCounty')
+	op.drop_table('duvalCountySales')
+	op.rename_table('duvalCountyTemp', 'duvalCounty')
+	op.rename_table('duvalCountySalesTemp', 'duvalCountySales')
 
 	op.drop_table('pierceCountyTemp')
 	op.drop_table('pierceCountySalesTemp')
 	op.drop_table('cookCountyTemp')
-	op.drop_table('cookCountySalesTemp')
 
 def downgrade():
     pass

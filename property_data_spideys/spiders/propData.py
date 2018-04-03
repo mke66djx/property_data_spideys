@@ -6,12 +6,25 @@ from property_data_spideys.items import MaricopaCountyDescriptionItem
 from scrapy.spiders import CSVFeedSpider
 from scrapy.xlib.pydispatch import dispatcher
 from property_data_spideys import pipelines
+import locale
+import os
+
+def getStartUrlFilePath(parcel_file):
+    relative_file_path = 'ParcelsLists/'+parcel_file
+    dirname = os.getcwd()
+    filepath = os.path.join(os.getcwd(), relative_file_path)
+    start_url_path = "file://"+filepath
+    return start_url_path
+
+def check_path(xpath_return):
+    if len(xpath_return) == 1:
+        return xpath_return[0]
+    else:
+        return None
 
 class PierceCountyScraper(CSVFeedSpider):
     name = "pierce_county_spider"
-    start_urls = [ "file:///C:/Users/ebeluli/Desktop/property_data_spideys/ParcelsLists/parcels.csv"]
-    #start_urls = [ "file:///home/edit/GruntJS/propertyDataScraper/ParcelsLists/parcels.csv"]
-
+    start_urls = [getStartUrlFilePath("parcels.csv")]
     custom_settings = {'ITEM_PIPELINES': {'property_data_spideys.pipelines.PierceFullPipeline': 400}}
 
     def __init__(self):
@@ -29,20 +42,14 @@ class PierceCountyScraper(CSVFeedSpider):
         request.meta['pin'] = pin
         return [request]
 
-    def check_path(self, xpath_return):
-        if len(xpath_return) == 1:
-            return xpath_return[0]
-        else:
-            return None
-
     #Chain data extraction and consolidate into one item
     def parse_summary(self, response):
 
-        parcel = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[2]/tr/td[1]/table/tr[2]/td[2]/text()').extract())
-        owner_name = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[2]/tr/td[2]/table/tr[2]/td[2]/text()').extract())
-        site_address = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[2]/tr/td[1]/table/tr[3]/td[2]/text()').extract())
-        mailing_address_street = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[2]/tr/td[2]/table/tr[3]/td[2]/text()[1]').extract())
-        mailing_address_city_zip = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[2]/tr/td[2]/table/tr[3]/td[2]/text()[2]').extract())
+        parcel = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[2]/tr/td[1]/table/tr[2]/td[2]/text()').extract())
+        owner_name = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[2]/tr/td[2]/table/tr[2]/td[2]/text()').extract())
+        site_address = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[2]/tr/td[1]/table/tr[3]/td[2]/text()').extract())
+        mailing_address_street = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[2]/tr/td[2]/table/tr[3]/td[2]/text()[1]').extract())
+        mailing_address_city_zip = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[2]/tr/td[2]/table/tr[3]/td[2]/text()[2]').extract())
 
         #-------------------------------Owner Name Splitting---------------------------#
         owner_name_list = str(owner_name).split()
@@ -75,15 +82,15 @@ class PierceCountyScraper(CSVFeedSpider):
 
     def parse_taxes(self, response):
 
-        tax_year_1 = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr/td/table/tr[2]/td/table/tr[2]/td[1]/text()').extract())
-        tax_year_2 = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr/td/table/tr[2]/td/table/tr[3]/td[1]/text()').extract())
-        tax_year_3 = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr/td/table/tr[2]/td/table/tr[4]/td[1]/text()').extract())
-        tax_year_1_assessed = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr/td/table/tr[2]/td/table/tr[2]/td[4]/text()').extract())
-        tax_year_2_assessed = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr/td/table/tr[2]/td/table/tr[3]/td[4]/text()').extract())
-        tax_year_3_assessed = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr/td/table/tr[2]/td/table/tr[4]/td[4]/text()').extract())
-        current_balance_due = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[4]/tr/td[1]/table[1]/tr[4]/td/table/tr[1]/td/table/tr/td[1]/strong/text()').extract())
+        tax_year_1 = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr/td/table/tr[2]/td/table/tr[2]/td[1]/text()').extract())
+        tax_year_2 = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr/td/table/tr[2]/td/table/tr[3]/td[1]/text()').extract())
+        tax_year_3 = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr/td/table/tr[2]/td/table/tr[4]/td[1]/text()').extract())
+        tax_year_1_assessed = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr/td/table/tr[2]/td/table/tr[2]/td[4]/text()').extract())
+        tax_year_2_assessed = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr/td/table/tr[2]/td/table/tr[3]/td[4]/text()').extract())
+        tax_year_3_assessed = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr/td/table/tr[2]/td/table/tr[4]/td[4]/text()').extract())
+        current_balance_due = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[4]/tr/td[1]/table[1]/tr[4]/td/table/tr[1]/td/table/tr/td[1]/strong/text()').extract())
 
-       #------------------------------Format Money Values-----------------------------------#
+       #------------------------------Format Money Values(Ints/Floats)-----------------------------------#
         tax_year_1_assessed_formatted = float(str(tax_year_1_assessed).replace(',', ''))
         tax_year_2_assessed_formatted = float(str(tax_year_2_assessed).replace(',', ''))
         tax_year_3_assessed_formatted = float(str(tax_year_3_assessed).replace(',', ''))
@@ -106,12 +113,12 @@ class PierceCountyScraper(CSVFeedSpider):
 
 
     def parse_land(self, response):
-        lot_square_footage = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr[1]/td[2]/table/tr[2]/td[2]/text()').extract())
-        acres = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr[1]/td[2]/table/tr[3]/td[2]/text()').extract())
+        lot_square_footage = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr[1]/td[2]/table/tr[2]/td[2]/text()').extract())
+        acres = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr[1]/td[2]/table/tr[3]/td[2]/text()').extract())
 
-        electric = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr[2]/td[2]/table/tr[2]/td[2]/text()').extract())
-        sewer = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr[2]/td[2]/table/tr[3]/td[2]/text()').extract())
-        water = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr[2]/td[2]/table/tr[4]/td[2]/text()').extract())
+        electric = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr[2]/td[2]/table/tr[2]/td[2]/text()').extract())
+        sewer = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr[2]/td[2]/table/tr[3]/td[2]/text()').extract())
+        water = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[3]/tr[2]/td[2]/table/tr[4]/td[2]/text()').extract())
 
         item = response.meta['item']
         pin = response.meta['pin']
@@ -129,19 +136,19 @@ class PierceCountyScraper(CSVFeedSpider):
 
 
     def parse_building(self, response):
-        property_type = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[4]/tr/td/table/tr[2]/td/table[1]/tr[1]/td[2]/text()').extract())
-        occupancy = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[4]/tr/td/table/tr[2]/td/table[1]/tr[5]/td[2]/text()').extract())
+        property_type = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[4]/tr/td/table/tr[2]/td/table[1]/tr[1]/td[2]/text()').extract())
+        occupancy = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[4]/tr/td/table/tr[2]/td/table[1]/tr[5]/td[2]/text()').extract())
 
-        square_footage = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[4]/tr/td/table/tr[2]/td/table[1]/tr[1]/td[4]/text()').extract())
-        attached_garage_footage = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[4]/tr/td/table/tr[2]/td/table[1]/tr[3]/td[4]/text()').extract())
+        square_footage = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[4]/tr/td/table/tr[2]/td/table[1]/tr[1]/td[4]/text()').extract())
+        attached_garage_footage = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[4]/tr/td/table/tr[2]/td/table[1]/tr[3]/td[4]/text()').extract())
 
-        year_built = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[4]/tr/td/table/tr[2]/td/table[2]/tr/td/table/tr[2]/td/table/tr[2]/td[2]/text()').extract())
-        adj_year_built = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[4]/tr/td/table/tr[2]/td/table[2]/tr/td/table/tr[2]/td/table/tr[2]/td[3]/text()').extract())
-        stories = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[4]/tr/td/table/tr[2]/td/table[2]/tr/td/table/tr[2]/td/table/tr[2]/td[5]/text()').extract())
-        bedrooms = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[4]/tr/td/table/tr[2]/td/table[2]/tr/td/table/tr[2]/td/table/tr[2]/td[6]/text()').extract())
-        baths = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[4]/tr/td/table/tr[2]/td/table[2]/tr/td/table/tr[2]/td/table/tr[2]/td[7]/text()').extract())
-        siding_type = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[4]/tr/td/table/tr[2]/td/table[2]/tr/td/table/tr[2]/td/table/tr[2]/td[8]/text()').extract())
-        units = self.check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[4]/tr/td/table/tr[2]/td/table[2]/tr/td/table/tr[2]/td/table/tr[2]/td[12]/text()').extract())
+        year_built = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[4]/tr/td/table/tr[2]/td/table[2]/tr/td/table/tr[2]/td/table/tr[2]/td[2]/text()').extract())
+        adj_year_built = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[4]/tr/td/table/tr[2]/td/table[2]/tr/td/table/tr[2]/td/table/tr[2]/td[3]/text()').extract())
+        stories = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[4]/tr/td/table/tr[2]/td/table[2]/tr/td/table/tr[2]/td/table/tr[2]/td[5]/text()').extract())
+        bedrooms = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[4]/tr/td/table/tr[2]/td/table[2]/tr/td/table/tr[2]/td/table/tr[2]/td[6]/text()').extract())
+        baths = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[4]/tr/td/table/tr[2]/td/table[2]/tr/td/table/tr[2]/td/table/tr[2]/td[7]/text()').extract())
+        siding_type = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[4]/tr/td/table/tr[2]/td/table[2]/tr/td/table/tr[2]/td/table/tr[2]/td[8]/text()').extract())
+        units = check_path(response.xpath('//*[@id="customContent"]/table/tr[1]/td/table[4]/tr/td/table/tr[2]/td/table[2]/tr/td/table/tr[2]/td/table/tr[2]/td[12]/text()').extract())
 
         item = response.meta['item']
         pin = response.meta['pin']
@@ -176,8 +183,7 @@ class PierceCountyScraper(CSVFeedSpider):
 
 class DuvalCountyScraper(CSVFeedSpider):
     name = "duval_county_spider"
-    start_urls = [ "file:///C:/Users/ebeluli/Desktop/property_data_spideys/ParcelsLists/duval_parcels.csv"]
-    #start_urls = [ "file:///home/edit/GruntJS/propertyDataScraper/ParcelsLists/parcels.csv"]
+    start_urls = [getStartUrlFilePath("duval_parcels.csv")]
     custom_settings = {'ITEM_PIPELINES': {'property_data_spideys.pipelines.DuvalFullPipeline': 400}}
 
     def __init__(self):
@@ -195,57 +201,51 @@ class DuvalCountyScraper(CSVFeedSpider):
         request.meta['pin'] = pin
         return [request]
 
-    def check_path(self, xpath_return):
-        if len(xpath_return) == 1:
-            return xpath_return[0]
-        else:
-            return None
-
     #Chain data extraction and consolidate into one item
     def parse_summary(self, response):
 
-        parcel = self.check_path(response.xpath('//*[@id="ctl00_cphBody_lblRealEstateNumber"]/text()').extract())
-        owner_name = self.check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterOwnerInformation_ctl00_lblOwnerName"]/text()').extract())
-        mailing_address_street = self.check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterOwnerInformation_ctl00_lblMailingAddressLine1"]/text()').extract())
-        mailing_address_cityzip = self.check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterOwnerInformation_ctl00_lblMailingAddressLine3"]/text()').extract())
+        parcel = check_path(response.xpath('//*[@id="ctl00_cphBody_lblRealEstateNumber"]/text()').extract())
+        owner_name = check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterOwnerInformation_ctl00_lblOwnerName"]/text()').extract())
+        mailing_address_street = check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterOwnerInformation_ctl00_lblMailingAddressLine1"]/text()').extract())
+        mailing_address_cityzip = check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterOwnerInformation_ctl00_lblMailingAddressLine3"]/text()').extract())
 
-        site_address_street = self.check_path(response.xpath('//*[@id="ctl00_cphBody_lblPrimarySiteAddressLine1"]/text()').extract())
-        site_address_cityzip = self.check_path(response.xpath('//*[@id="ctl00_cphBody_lblPrimarySiteAddressLine2"]/text()').extract())
+        site_address_street = check_path(response.xpath('//*[@id="ctl00_cphBody_lblPrimarySiteAddressLine1"]/text()').extract())
+        site_address_cityzip = check_path(response.xpath('//*[@id="ctl00_cphBody_lblPrimarySiteAddressLine2"]/text()').extract())
 
-        property_use = self.check_path(response.xpath('//*[@id="ctl00_cphBody_lblPropertyUse"]/text()').extract())
-        building_type = self.check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_lblBuildingType"]/text()').extract())
+        property_use = check_path(response.xpath('//*[@id="ctl00_cphBody_lblPropertyUse"]/text()').extract())
+        building_type = check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_lblBuildingType"]/text()').extract())
 
-        year_built = self.check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_lblYearBuilt"]/text()').extract())
-        stories = self.check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingAttributes"]/tr[2]/td[2]/text()').extract())
-        bedrooms = self.check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingAttributes"]/tr[3]/td[2]/text()').extract())
-        bathrooms = self.check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingAttributes"]/tr[4]/td[2]/text()').extract())
-        units = self.check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingAttributes"]/tr[5]/td[2]/text()').extract())
-        total_heated_sqaure_footage = self.check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingArea"]/tr[last()]/td[3]/text()').extract())
+        year_built = check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_lblYearBuilt"]/text()').extract())
+        stories = check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingAttributes"]/tr[2]/td[2]/text()').extract())
+        bedrooms = check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingAttributes"]/tr[3]/td[2]/text()').extract())
+        bathrooms = check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingAttributes"]/tr[4]/td[2]/text()').extract())
+        units = check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingAttributes"]/tr[5]/td[2]/text()').extract())
+        total_heated_sqaure_footage = check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingArea"]/tr[last()]/td[3]/text()').extract())
 
-        heating_type = self.check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingElements"]/tr[9]/td[3]/text()').extract())
-        ac_type = self.check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingElements"]/tr[10]/td[3]/text()').extract())
+        heating_type = check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingElements"]/tr[9]/td[3]/text()').extract())
+        ac_type = check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingElements"]/tr[10]/td[3]/text()').extract())
 
-        tax_market_value_year1 = self.check_path(response.xpath('//*[@id="ctl00_cphBody_lblJustMarketValueCertified"]/text()').extract())
-        tax_market_value_year2 = self.check_path(response.xpath('//*[@id="ctl00_cphBody_lblJustMarketValueInProgress"]/text()').extract())
+        tax_market_value_year1 = check_path(response.xpath('//*[@id="ctl00_cphBody_lblJustMarketValueCertified"]/text()').extract())
+        tax_market_value_year2 = check_path(response.xpath('//*[@id="ctl00_cphBody_lblJustMarketValueInProgress"]/text()').extract())
 
-        sale1_date = self.check_path(response.xpath('//*[@id="ctl00_cphBody_lblHeaderInProgress"]/text()').extract())
-        sale2_date = self.check_path(response.xpath('//*[@id="ctl00_cphBody_lblHeaderCertified"]/text()').extract())
+        sale1_date = check_path(response.xpath('//*[@id="ctl00_cphBody_lblHeaderInProgress"]/text()').extract())
+        sale2_date = check_path(response.xpath('//*[@id="ctl00_cphBody_lblHeaderCertified"]/text()').extract())
 
-        sale1_price = self.check_path(response.xpath('//*[@id="ctl00_cphBody_gridSalesHistory"]/tr[2]/td[3]/text()').extract())
-        sale2_price = self.check_path(response.xpath('//*[@id="ctl00_cphBody_gridSalesHistory"]/tr[3]/td[3]/text()').extract())
+        sale1_price = check_path(response.xpath('//*[@id="ctl00_cphBody_gridSalesHistory"]/tr[2]/td[3]/text()').extract())
+        sale2_price = check_path(response.xpath('//*[@id="ctl00_cphBody_gridSalesHistory"]/tr[3]/td[3]/text()').extract())
 
-        total_square_footage = self.check_path(response.xpath('//*[@id="ctl00_cphBody_lblTotalArea1"]/text()').extract())
+        total_square_footage = check_path(response.xpath('//*[@id="ctl00_cphBody_lblTotalArea1"]/text()').extract())
 
-        exemptions_none = self.check_path(response.xpath('//*[@id="ctl00_cphBody_lblExemptionsCountyNoData"]/li/text()').extract())
+        exemptions_none = check_path(response.xpath('//*[@id="ctl00_cphBody_lblExemptionsCountyNoData"]/li/text()').extract())
 
         #-----------------------------------------Handle Exemptions-------------------------------------------#
         senior_exemption,homestead_exemption = 0,0
         if exemptions_none == None:
-            exemption_1 = self.check_path(response.xpath('//*[@id="ctl00_cphBody_ul_propExemptionsCounty"]/li[1]/span[1]/text()').extract())
-            exemption_2 = self.check_path(response.xpath('//*[@id="ctl00_cphBody_ul_propExemptionsCounty"]/li[2]/span[1]/text()').extract())
-            exemption_3 = self.check_path(response.xpath('//*[@id="ctl00_cphBody_ul_propExemptionsCounty"]/li[3]/span[1]/text()').extract())
-            exemption_4 = self.check_path(response.xpath('//*[@id="ctl00_cphBody_ul_propExemptionsCounty"]/li[4]/span[1]/text()').extract())
-            exemption_5 = self.check_path(response.xpath('//*[@id="ctl00_cphBody_ul_propExemptionsCounty"]/li[4]/span[1]/text()').extract())
+            exemption_1 = check_path(response.xpath('//*[@id="ctl00_cphBody_ul_propExemptionsCounty"]/li[1]/span[1]/text()').extract())
+            exemption_2 = check_path(response.xpath('//*[@id="ctl00_cphBody_ul_propExemptionsCounty"]/li[2]/span[1]/text()').extract())
+            exemption_3 = check_path(response.xpath('//*[@id="ctl00_cphBody_ul_propExemptionsCounty"]/li[3]/span[1]/text()').extract())
+            exemption_4 = check_path(response.xpath('//*[@id="ctl00_cphBody_ul_propExemptionsCounty"]/li[4]/span[1]/text()').extract())
+            exemption_5 = check_path(response.xpath('//*[@id="ctl00_cphBody_ul_propExemptionsCounty"]/li[4]/span[1]/text()').extract())
 
             exemption_list_filtered = []
             for x in exemption_1,exemption_2,exemption_3,exemption_4,exemption_5:
@@ -296,12 +296,8 @@ class DuvalCountyScraper(CSVFeedSpider):
 
 class CookCountyScraper(CSVFeedSpider):
     name = "cook_county_spider"
-    start_urls = [ "file:///C:/Users/ebeluli/Desktop/property_data_spideys/ParcelsLists/cook_parcels.csv"]
-    #start_urls = [ "file:///home/edit/GruntJS/propertyDataScraper/ParcelsLists/parcels.csv"]
-
-    custom_settings = {
-        'ITEM_PIPELINES': {'property_data_spideys.pipelines.CookFullPipeline': 300}
-        }
+    start_urls = [getStartUrlFilePath("cook_parcels.csv")]
+    custom_settings = {'ITEM_PIPELINES': {'property_data_spideys.pipelines.CookFullPipeline': 300}}
 
     def __init__(self):
         dispatcher.connect(self.spider_closed, signals.spider_closed)
@@ -318,24 +314,97 @@ class CookCountyScraper(CSVFeedSpider):
         request.meta['pin'] = pin
         return [request]
 
-    def check_path(self, xpath_return):
-        if len(xpath_return) == 1:
-            return xpath_return[0]
-        else:
-            return None
-
     def parse_summary(self, response):
-        site_address_street = self.check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyAddress"]/text()').extract())
-        site_address_city = self.check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyCity"]/text()').extract())
-        site_address_zip = self.check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyZip"]/text()').extract())
-        site_township = self.check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyTownship"]/text()').extract())
+        site_address_street = check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyAddress"]/text()').extract())
+        site_address_city = check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyCity"]/text()').extract())
+        site_address_zip = check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyZip"]/text()').extract())
+        site_township = check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyTownship"]/text()').extract())
 
-        owner_name = self.check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyMailingName"]/text()').extract())
-        mailing_address_street = self.check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyMailingAddress"]/text()').extract())
-        mailing_city_zip_state = self.check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyMailingCityStateZip"]/text()').extract())
+        owner_name = check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyMailingName"]/text()').extract())
+        mailing_address_street = check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyMailingAddress"]/text()').extract())
+        mailing_city_zip_state = check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyMailingCityStateZip"]/text()').extract())
 
-        lot_square_footage = self.check_path(response.xpath('//*[@id="ContentPlaceHolder1_TaxYearInfo_propertyLotSize"]/text()').extract())
-        building_square_footage = self.check_path(response.xpath('//*[@id="ContentPlaceHolder1_TaxYearInfo_propertyBuildingSize"]/text()').extract())
+        lot_square_footage = check_path(response.xpath('//*[@id="ContentPlaceHolder1_TaxYearInfo_propertyLotSize"]/text()').extract())
+        building_square_footage = check_path(response.xpath('//*[@id="ContentPlaceHolder1_TaxYearInfo_propertyBuildingSize"]/text()').extract())
+
+        #---------------------------------------------------------Tax Info-------------------------------------------------------------------#
+        tax_year0 = check_path(response.xpath('//*[@id="ContentPlaceHolder1_TaxBillInfo_rptTaxBill_taxBillYear_0"]/text()').extract())
+        tax_year1 = check_path(response.xpath('//*[@id="ContentPlaceHolder1_TaxBillInfo_rptTaxBill_taxBillYear_1"]/text()').extract())
+        tax_year2 = check_path(response.xpath('//*[@id="ContentPlaceHolder1_TaxBillInfo_rptTaxBill_taxBillYear_2"]/text()').extract())
+        tax_year3 = check_path(response.xpath('//*[@id="ContentPlaceHolder1_TaxBillInfo_rptTaxBill_taxBillYear_3"]/text()').extract())
+        tax_year4 = check_path(response.xpath('//*[@id="ContentPlaceHolder1_TaxBillInfo_rptTaxBill_taxBillYear_4"]/text()').extract())
+
+        print(tax_year0,tax_year1,tax_year2,tax_year3,tax_year4)
+
+        #Taxes Paid
+
+        # Check if it was paid
+        paid_in_full_amount_year0 = check_path(response.xpath('//*[@id="taxpaid'+tax_year1.split(":")[0]+'-button"]/span/text()').extract())
+        paid_in_full_amount_year1 = check_path(response.xpath('//*[@id="taxpaid'+tax_year2.split(":")[0]+'-button"]/span/text()').extract())
+
+        #Tax sales on record
+        year_0_tax_sale_indicator = check_path(response.xpath('//*[@id="taxsaleredeemed'+tax_year0.split(":")[0]+'-button"]/span/text()').extract())
+        year_1_tax_sale_indicator = check_path(response.xpath('//*[@id="taxsaleredeemed'+tax_year1.split(":")[0]+'-button"]/span/text()').extract())
+        year_2_tax_sale_indicator = check_path(response.xpath('//*[@id="taxsaleredeemed'+tax_year2.split(":")[0]+'-button"]/span/text()').extract())
+        year_3_tax_sale_indicator = check_path(response.xpath('//*[@id="taxsaleredeemed'+tax_year3.split(":")[0]+'-button"]/span/text()').extract())
+        year_4_tax_sale_indicator = check_path(response.xpath('//*[@id="taxsaleredeemed'+tax_year4.split(":")[0]+'-button"]/span/text()').extract())
+
+
+        #--------------------------------------------------------Documents Recorded--------------------------------------------------------------------#
+        doc_rec1 = check_path(response.xpath('//*[@id="ContentPlaceHolder1_success"]/div/div[5]/div[3]/table/tr[1]/td/div[1]/div/text()').extract())
+        doc_rec2 = check_path(response.xpath('//*[@id="ContentPlaceHolder1_success"]/div/div[5]/div[3]/table/tr[2]/td/div[1]/div/text()').extract())
+        doc_rec3 = check_path(response.xpath('///*[@id="ContentPlaceHolder1_success"]/div/div[5]/div[3]/table/tr[3]/td/div[1]/div/text()').extract())
+        doc_rec4 = check_path(response.xpath('//*[@id="ContentPlaceHolder1_success"]/div/div[5]/div[3]/table/tr[4]/td/div[1]/div/text()').extract())
+        doc_rec5 = check_path(response.xpath('//*[@id="ContentPlaceHolder1_success"]/div/div[5]/div[3]/table/tr[5]/td/div[1]/div/text()').extract())
+
+
+        #Tax Sales Flag
+        taxes_sold,foreclosure= 0,0
+        foreclosure_date= 'NA'
+        sale_indicator_list_filter,doc_list = [],[]
+
+
+        for x in year_0_tax_sale_indicator,year_1_tax_sale_indicator,year_2_tax_sale_indicator,year_3_tax_sale_indicator,year_4_tax_sale_indicator:
+            if x == None:
+                sale_indicator_list_filter.append('NA')
+            else:
+                sale_indicator_list_filter.append(x)
+
+        indicator_string = '\t'.join(sale_indicator_list_filter)
+
+        if "Taxes Sold" in indicator_string:
+            taxes_sold = 1
+
+        #Tax Paid Flag
+        if paid_in_full_amount_year0 != None:
+            tax_paid_year0 = "Paid_Full"
+        else:
+            tax_paid_year0 = "Not_Paid"
+
+        if paid_in_full_amount_year1 != None:
+            tax_paid_year1 = "Paid_Full"
+        else:
+            tax_paid_year1 = "Not_Paid"
+
+        #Foreclosure Flag
+        for x in doc_rec1,doc_rec2,doc_rec3,doc_rec4,doc_rec5:
+            if x == None:
+                doc_list.append('NA')
+            else:
+                doc_list.append(x)
+
+        #Check if Lis Pendes Foreclosure
+        print(doc_list)
+        for x in doc_list:
+            print(x)
+            x_split = x.split("-")
+            print("hellll00")
+            print(len(x_split))
+            print(x_split)
+            if "FORECLOSURE" in x_split[1]:
+                print("CHACHNIGGGGGG")
+                foreclosure = 1
+                foreclosure_date = x_split[1]
 
         #--------------------Name Checks------------------------#
         owner_first_last_list = str(owner_name).split()
@@ -373,6 +442,12 @@ class CookCountyScraper(CSVFeedSpider):
         item['mail_state'] = mail_state
         item['mail_zip'] = mail_zip
 
+        item['taxes_sold'] = taxes_sold
+        item['tax_paid_year0'] = tax_paid_year0
+        item['tax_paid_year1'] = tax_paid_year1
+        item['foreclosure'] = foreclosure
+        item['foreclosure_date'] = foreclosure_date
+
         item['lot_square_footage'] = int(str(lot_square_footage).replace(',', ''))
         item['building_square_footage'] = int(str(building_square_footage).replace(',', ''))
 
@@ -380,22 +455,22 @@ class CookCountyScraper(CSVFeedSpider):
 
     def parse_characteristics(self, response):
 
-        parcel = self.check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropInfoPIN"]/text()').extract())
-        current_year_assessed_value  = self.check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharMktValCurrYear"]/text()').extract())
-        prior_year_assessed_value = self.check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharMktValPrevYear"]/text()').extract())
-        property_use = self.check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharUse"]/text()').extract())
-        residence_type = self.check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharResType"]/text()').extract())
-        units = self.check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharApts"]/text()').extract())
-        construction_type = self.check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharExtConst"]/text()').extract())
-        full_bathrooms = self.check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharFullBaths"]/text()').extract())
-        half_bathrooms = self.check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharHalfBaths"]/text()').extract())
-        basement = self.check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharBasement"]/text()').extract())
-        central_air = self.check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharCentAir"]/text()').extract())
-        garage_type = self.check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharGarage"]/text()').extract())
-        age = self.check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharAge"]/text()').extract())
+        parcel = check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropInfoPIN"]/text()').extract())
+        current_year_assessed_value  = check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharMktValCurrYear"]/text()').extract())
+        prior_year_assessed_value = check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharMktValPrevYear"]/text()').extract())
+        property_use = check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharUse"]/text()').extract())
+        residence_type = check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharResType"]/text()').extract())
+        units = check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharApts"]/text()').extract())
+        construction_type = check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharExtConst"]/text()').extract())
+        full_bathrooms = check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharFullBaths"]/text()').extract())
+        half_bathrooms = check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharHalfBaths"]/text()').extract())
+        basement = check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharBasement"]/text()').extract())
+        central_air = check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharCentAir"]/text()').extract())
+        garage_type = check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharGarage"]/text()').extract())
+        age = check_path(response.xpath('//*[@id="ctl00_phArticle_ctlPropertyDetails_lblPropCharAge"]/text()').extract())
 
-        home_owner_exemption = self.check_path(response.xpath('//*[@id="exemptions"]/div[2]/div[1]/span[2]/text()').extract())
-        senior_citizen_exemption = self.check_path(response.xpath('//*[@id="exemptions"]/div[2]/div[2]/span[2]/text()').extract())
+        home_owner_exemption = check_path(response.xpath('//*[@id="exemptions"]/div[2]/div[1]/span[2]/text()').extract())
+        senior_citizen_exemption = check_path(response.xpath('//*[@id="exemptions"]/div[2]/div[2]/span[2]/text()').extract())
 
         item = response.meta['item']
         item['parcel'] = str(parcel).replace('-', '')
@@ -422,7 +497,7 @@ class MaricopaAPI(CSVFeedSpider):
     name = "maricopa_county_worker"
     authorization_token = '5ae1363b-28b8-11e8-9917-00155da2c015'
 
-    start_urls = [ "file:///C:/Users/ebeluli/Desktop/property_data_spideys/ParcelsLists/maricopa_parcels.csv"]
+    start_urls = [getStartUrlFilePath("maricopa_parcels.csv")]
 
     custom_settings = {'ITEM_PIPELINES': {'property_data_spideys.pipelines.MaricopaFullPipeline': 400}}
 
@@ -436,8 +511,6 @@ class MaricopaAPI(CSVFeedSpider):
         pin = row['parcel']
         headerss = {"X-MC-AUTH":"%s" %(MaricopaAPI.authorization_token)}
         request = scrapy.Request('https://api.mcassessor.maricopa.gov/api/parcel/'+pin,headers=headerss,dont_filter = True,callback=self.parse_json)
-        #request = scrapy.Request('https://api.mcassessor.maricopa.gov/api/parcel/15827100C',headers=headerss,dont_filter=True,callback=self.parse_json)
-
         request.meta['item'] = MaricopaCountyDescriptionItem()
         request.meta['pin'] = pin
         yield request
@@ -483,6 +556,7 @@ class MaricopaAPI(CSVFeedSpider):
         site_zip_city_list = streetCity_StateZipList[1].split()
         site_zip = site_zip_city_list[len(site_zip_city_list)-1]
         site_city = " ".join(site_zip_city_list[0:len(site_zip_city_list)-1])
+
 
         item['owner_name'] = owner_name
         item['owner_full_address'] = owner_full_address

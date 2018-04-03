@@ -1,8 +1,6 @@
 from property_data_spideys.models import CookPropertyDataTemp,CookCountyPropertyData,PiercePropertyDataTemp,PierceSalesDataTemp,DuvalSalesDataTemp,DuvalPropertyDataTemp,db_connect,create_table
 import functools
 from sqlalchemy.orm import (mapper,sessionmaker)
-
-
 #---------------------------------------------------------------------------------------------------------
 #-----------------------------------------Full Table Update Pipelines-------------------------------------
 #---------------------------------------------------------------------------------------------------------
@@ -22,7 +20,8 @@ class PierceFullPipeline(object):
     def upgrade(self):
         from alembic.config import Config
         from alembic import command
-        alembic_cfg = Config(r"C:/Users/ebeluli/Desktop/property_data_spideys/alembic.ini")
+        alembic_cfg = Config('alembic.ini')
+        print(alembic_cfg)
         with self.engine.begin() as connection:
             alembic_cfg.attributes['connection'] = connection
             command.upgrade(alembic_cfg, "65c4237f4c27")
@@ -47,6 +46,7 @@ class PierceFullPipeline(object):
         propertyDataTemp.property_type = item["property_type"]
         propertyDataTemp.occupancy = item["occupancy"]
         propertyDataTemp.year_built = item["year_built"]
+        propertyDataTemp.adj_year_built = item["adj_year_built"]
         propertyDataTemp.units = item["units"]
         propertyDataTemp.bedrooms = item["bedrooms"]
         propertyDataTemp.baths = item["baths"]
@@ -93,7 +93,7 @@ class DuvalFullPipeline(object):
     def upgrade(self):
         from alembic.config import Config
         from alembic import command
-        alembic_cfg = Config(r"C:/Users/ebeluli/Desktop/property_data_spideys/alembic.ini")
+        alembic_cfg = Config('alembic.ini')
         with self.engine.begin() as connection:
             alembic_cfg.attributes['connection'] = connection
             command.upgrade(alembic_cfg, "2849d9e93551")
@@ -156,7 +156,7 @@ class CookFullPipeline(object):
     def upgrade(self):
         from alembic.config import Config
         from alembic import command
-        alembic_cfg = Config(r"C:/Users/ebeluli/Desktop/property_data_spideys/alembic.ini")
+        alembic_cfg = Config('alembic.ini')
         with self.engine.begin() as connection:
             alembic_cfg.attributes['connection'] = connection
             command.upgrade(alembic_cfg, "110ec6566dca")
@@ -199,6 +199,11 @@ class CookFullPipeline(object):
         propertyDataTemp.home_owner_exemption = item["home_owner_exemption"]
         propertyDataTemp.senior_citizen_exemption = item["senior_citizen_exemption"]
 
+        propertyDataTemp.taxes_sold = item["taxes_sold"]
+        propertyDataTemp.tax_paid_year0 = item["tax_paid_year0"]
+        propertyDataTemp.tax_paid_year1 = item["tax_paid_year1"]
+        propertyDataTemp.foreclosure = item["foreclosure"]
+        propertyDataTemp.foreclosure_date = item["foreclosure_date"]
 
         try:
             session.add(propertyDataTemp)

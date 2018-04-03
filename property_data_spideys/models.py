@@ -122,6 +122,13 @@ class CookCountyPropertyData(DeclarativeBase):
     home_owner_exemption = Column('home_owner_exemption', Text())
     senior_citizen_exemption = Column('senior_citizen_exemption', Text())
 
+    taxes_sold = Column('taxes_sold', Text())
+    tax_paid_year0 = Column('tax_paid_year0', Text())
+    tax_paid_year1 = Column('tax_paid_year1', Text())
+    foreclosure = Column('foreclosure', Text())
+    foreclosure_date = Column('foreclosure_date', Text())
+
+
 #--------------------------------------------------------------------------
 #-------The temps below are used when doing full table updates-------------
 #--------------------------------------------------------------------------
@@ -226,4 +233,10 @@ class CookPropertyDataTemp(DeclarativeBase):
     garage_type = Column('garage_type', Text())
     home_owner_exemption = Column('home_owner_exemption', Text())
     senior_citizen_exemption = Column('senior_citizen_exemption', Text())
+
+    taxes_sold = Column('taxes_sold', Text())
+    tax_paid_year0 = Column('tax_paid_year0', Text())
+    tax_paid_year1 = Column('tax_paid_year1', Text())
+    foreclosure = Column('foreclosure', Text())
+    foreclosure_date = Column('foreclosure_date', Text())
 
