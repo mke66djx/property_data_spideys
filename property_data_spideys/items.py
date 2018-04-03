@@ -109,7 +109,16 @@ class CookCountyDescriptionItem(scrapy.Item):
     home_owner_exemption = scrapy.Field()
     senior_citizen_exemption = scrapy.Field()
 
-
+class MaricopaCountyDescriptionItem(scrapy.Item):
+    parcel = scrapy.Field()
+    owner_name = scrapy.Field()
+    owner_last_name = scrapy.Field()
+    owner_first_name = scrapy.Field()
+    parcel = scrapy.Field()
+    site_address = scrapy.Field()
+    mailing_address = scrapy.Field()
+    mail_city = scrapy.Field()
+    mail_state = scrapy.Field()
 
 
 

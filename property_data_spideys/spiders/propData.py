@@ -1,15 +1,13 @@
 import scrapy
+import json
 from scrapy import signals
 from property_data_spideys.items import PierceCountyDescriptionItem,DuvalCountyDescriptionItem,CookCountyDescriptionItem
+from property_data_spideys.items import MaricopaCountyDescriptionItem
 from scrapy.spiders import CSVFeedSpider
 from scrapy.xlib.pydispatch import dispatcher
 from property_data_spideys import pipelines
-import locale
 
-class spiderBaseFunctions():
-    pass
-
-class PierceCountyScraper(CSVFeedSpider,spiderBaseFunctions):
+class PierceCountyScraper(CSVFeedSpider):
     name = "pierce_county_spider"
     start_urls = [ "file:///C:/Users/ebeluli/Desktop/property_data_spideys/ParcelsLists/parcels.csv"]
     #start_urls = [ "file:///home/edit/GruntJS/propertyDataScraper/ParcelsLists/parcels.csv"]
@@ -418,3 +416,92 @@ class CookCountyScraper(CSVFeedSpider):
         item['senior_citizen_exemption'] = senior_citizen_exemption
 
         return [item]
+
+
+class MaricopaAPI(CSVFeedSpider):
+    name = "maricopa_county_worker"
+    authorization_token = '5ae1363b-28b8-11e8-9917-00155da2c015'
+
+    start_urls = [ "file:///C:/Users/ebeluli/Desktop/property_data_spideys/ParcelsLists/maricopa_parcels.csv"]
+
+    custom_settings = {'ITEM_PIPELINES': {'property_data_spideys.pipelines.MaricopaFullPipeline': 400}}
+
+    def __init__(self):
+        dispatcher.connect(self.spider_closed, signals.spider_closed)
+
+    def spider_closed(self, spider):
+        pass
+
+    def parse_row(self,response,row):
+        pin = row['parcel']
+        headerss = {"X-MC-AUTH":"%s" %(MaricopaAPI.authorization_token)}
+        request = scrapy.Request('https://api.mcassessor.maricopa.gov/api/parcel/'+pin,headers=headerss,dont_filter = True,callback=self.parse_json)
+        #request = scrapy.Request('https://api.mcassessor.maricopa.gov/api/parcel/15827100C',headers=headerss,dont_filter=True,callback=self.parse_json)
+
+        request.meta['item'] = MaricopaCountyDescriptionItem()
+        request.meta['pin'] = pin
+        yield request
+
+    #Chain data extraction and consolidate into one item
+    def parse_json(self, response):
+        jsonresponse = json.loads(response.body_as_unicode())
+        item = response.meta['item']
+        pin = response.meta['pin']
+
+        owner_name = jsonresponse["Owner"]["OwnerName"]
+        owner_street_address1 = jsonresponse["Owner"]["OwnerMailAddress1"]
+        owner_city= jsonresponse["Owner"]["OwnerCity"]
+        owner_state = jsonresponse["Owner"]["OwnerState"]
+        owner_zip = jsonresponse["Owner"]["OwnerZip"]
+        owner_full_address = jsonresponse["Owner"]["FullMailingAddress"]
+
+        full_property_address = jsonresponse["PropertyAddress"]
+        property_description = jsonresponse["PEPropertyUseDescription"]
+        lot_size = jsonresponse["LotSize"]
+        property_type = jsonresponse["PropertyType"]
+        rental = jsonresponse["IsRental"]
+
+        value_0 = jsonresponse["Valuations"][0]["FullCashValue"]
+        value_1 = jsonresponse["Valuations"][1]["FullCashValue"]
+        value_2 = jsonresponse["Valuations"][2]["FullCashValue"]
+
+        last_deed_date = jsonresponse["Owner"]["DeedDate"]
+        last_sale_price = jsonresponse["Owner"]["SalePrice"]
+
+        #--------------------------Owner Name Processing-----------------------------#
+        if "LLC" in owner_name:
+            owner_first = "LLC"
+            owner_last = "LLC"
+        else:
+            owner_last_first_list = str(owner_name).split()
+            owner_last = owner_last_first_list[0]
+            owner_first = owner_last_first_list[1]
+
+        #------------------------Property Address Processing----------------------------#
+        streetCity_StateZipList = str(full_property_address).split('   ')
+        site_street = streetCity_StateZipList[0]
+        site_zip_city_list = streetCity_StateZipList[1].split()
+        site_zip = site_zip_city_list[len(site_zip_city_list)-1]
+        site_city = " ".join(site_zip_city_list[0:len(site_zip_city_list)-1])
+
+        item['owner_name'] = owner_name
+        item['owner_full_address'] = owner_full_address
+        item['owner_street_address1'] = owner_street_address1
+        item['owner_city'] = owner_city
+        item['owner_state'] = owner_state
+        item['owner_zip'] = owner_zip
+        item['full_property_address'] = full_property_address
+        item['site_street'] = site_street
+        item['site_city'] = site_city
+        item['site_zip'] = site_zip
+        item['property_description'] = property_description
+        item['lot_size'] = lot_size
+        item['property_type'] = property_type
+        item['rental'] = rental
+        item['value_0'] = value_0
+        item['value_1'] = value_1
+        item['value_2'] = value_2
+        item['last_deed_date'] = last_deed_date
+        item['last_sale_price'] = last_sale_price
+
+        yield item

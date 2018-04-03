@@ -25,9 +25,9 @@ CONNECTION_STRING = "{drivername}://{user}:{passwd}@{host}:{port}/{db_name}?char
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'propertyDataScraper (+http://www.yourdomain.com)'
 
-# Obey robots.txt rules
-ROBOTSTXT_OBEY = True
-
+USER_AGENT='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/61.0.3163.100 Safari/537.36'
+ROBOTSTXT_OBEY=False
+# Obey robots.txt rule
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32
 
@@ -77,6 +77,7 @@ ITEM_PIPELINES = {
     'property_data_spideys.pipelines.DuvalFullPipeline': 300,
     'property_data_spideys.pipelines.DuvalRowPipeline': 300,
     'property_data_spideys.pipelines.CookFullPipeline': 300,
+    'property_data_spideys.pipelines.MaricopaFullPipeline': 300,
     'property_data_spideys.pipelines.CookRowPipeline': 300
 }
 
