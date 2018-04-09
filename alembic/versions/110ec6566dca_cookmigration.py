@@ -17,15 +17,8 @@ branch_labels = None
 depends_on = None
 
 def upgrade():
-	op.drop_table('cookcounty')
-	op.rename_table('cookCountyTemp','cookcounty')
-
-	op.drop_table('pierceCountyTemp')
-	op.drop_table('pierceCountySalesTemp')
-	op.drop_table('duvalCountyTemp')
-	op.drop_table('duvalCountySalesTemp')
-	op.drop_table('maricopaCountyTemp')
-
+	op.drop_table('cookCounty')
+	op.rename_table('cookCountyTemp','cookCounty')
 
 def downgrade():
     pass

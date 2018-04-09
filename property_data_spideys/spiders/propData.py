@@ -13,18 +13,28 @@ import os.path
 def getStartUrlFilePath(parcel_file):
     relative_file_path = 'ParcelsLists/'+parcel_file
     filepath = os.path.abspath(os.path.join(os.getcwd(), relative_file_path))
-    start_url_path = "file:///"+filepath
+    start_url_path = "file://"+filepath
     return start_url_path
 
 def check_path(xpath_return):
     if len(xpath_return) == 1:
         return xpath_return[0]
     else:
-        return None
+        return 'NA'
+
+def checkIfNa(string,type):
+    if string == 'NA' or string == 'N/A' or string == '**':
+        if type == 'str':
+            return 'NA'
+        if type == 'num':
+            return 0
+    else:
+        return string
+
 
 class PierceCountyScraper(CSVFeedSpider):
     name = "pierce_county_spider"
-    start_urls = [getStartUrlFilePath("parcels.csv")]
+    start_urls = [getStartUrlFilePath("pierce_parcels.csv")]
     custom_settings = {'ITEM_PIPELINES': {'property_data_spideys.pipelines.PierceFullPipeline': 400}}
 
     def __init__(self):
@@ -298,7 +308,10 @@ class DuvalCountyScraper(CSVFeedSpider):
 class CookCountyScraper(CSVFeedSpider):
     name = "cook_county_spider"
     start_urls = [getStartUrlFilePath("cook_parcels.csv")]
-    custom_settings = {'ITEM_PIPELINES': {'property_data_spideys.pipelines.CookFullPipeline': 300}}
+    custom_settings = {
+        'ITEM_PIPELINES': {'property_data_spideys.pipelines.CookFullPipeline': 300}
+        }
+
 
     def __init__(self):
         dispatcher.connect(self.spider_closed, signals.spider_closed)
@@ -313,9 +326,19 @@ class CookCountyScraper(CSVFeedSpider):
         request = scrapy.Request('http://www.cookcountypropertyinfo.com/cookviewerpinresults.aspx?pin='+pin,dont_filter = True,callback=self.parse_summary)
         request.meta['item'] = CookCountyDescriptionItem()
         request.meta['pin'] = pin
+        request.meta['retries'] = 3
         return [request]
 
     def parse_summary(self, response):
+        parcel_title = check_path(response.xpath('//*[@id="ContentPlaceHolder1_lblResultTitle"]/text()').extract())
+        print(response.xpath('//body//p//text()').extract())
+        print(response)
+        print(response.meta['pin'])
+        if parcel_title == 'NA':
+            if int(response.meta['retries'])>0:     
+                response.meta['retries'] = response.meta['retries'] -1
+                return [scrapy.Request('http://www.cookcountypropertyinfo.com/cookviewerpinresults.aspx?pin='+response.meta['pin'],dont_filter = True,callback=self.parse_summary)]
+            
         site_address_street = check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyAddress"]/text()').extract())
         site_address_city = check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyCity"]/text()').extract())
         site_address_zip = check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyZip"]/text()').extract())
@@ -327,7 +350,6 @@ class CookCountyScraper(CSVFeedSpider):
 
         lot_square_footage = check_path(response.xpath('//*[@id="ContentPlaceHolder1_TaxYearInfo_propertyLotSize"]/text()').extract())
         building_square_footage = check_path(response.xpath('//*[@id="ContentPlaceHolder1_TaxYearInfo_propertyBuildingSize"]/text()').extract())
-
         #---------------------------------------------------------Tax Info-------------------------------------------------------------------#
         tax_year0 = check_path(response.xpath('//*[@id="ContentPlaceHolder1_TaxBillInfo_rptTaxBill_taxBillYear_0"]/text()').extract())
         tax_year1 = check_path(response.xpath('//*[@id="ContentPlaceHolder1_TaxBillInfo_rptTaxBill_taxBillYear_1"]/text()').extract())
@@ -335,13 +357,12 @@ class CookCountyScraper(CSVFeedSpider):
         tax_year3 = check_path(response.xpath('//*[@id="ContentPlaceHolder1_TaxBillInfo_rptTaxBill_taxBillYear_3"]/text()').extract())
         tax_year4 = check_path(response.xpath('//*[@id="ContentPlaceHolder1_TaxBillInfo_rptTaxBill_taxBillYear_4"]/text()').extract())
 
-        print(tax_year0,tax_year1,tax_year2,tax_year3,tax_year4)
+        # Check if last two years are paid in full
+        paid_in_full_button1 = check_path(response.xpath('//*[@id="taxpaid'+tax_year0.split(":")[0]+'-button"]/span/text()').extract())
+        paid_in_full_button2 = check_path(response.xpath('//*[@id="taxpaid'+tax_year1.split(":")[0]+'-button"]/span/text()').extract())
 
-        #Taxes Paid
-
-        # Check if it was paid
-        paid_in_full_amount_year0 = check_path(response.xpath('//*[@id="taxpaid'+tax_year1.split(":")[0]+'-button"]/span/text()').extract())
-        paid_in_full_amount_year1 = check_path(response.xpath('//*[@id="taxpaid'+tax_year2.split(":")[0]+'-button"]/span/text()').extract())
+        tax0 = check_path(response.xpath('//*[@id="ContentPlaceHolder1_TaxBillInfo_rptTaxBill_taxBillAmount_0"]/text()').extract())
+        tax1 = check_path(response.xpath('//*[@id="ContentPlaceHolder1_TaxBillInfo_rptTaxBill_taxBillAmount_1"]/text()').extract())
 
         #Tax sales on record
         year_0_tax_sale_indicator = check_path(response.xpath('//*[@id="taxsaleredeemed'+tax_year0.split(":")[0]+'-button"]/span/text()').extract())
@@ -354,69 +375,85 @@ class CookCountyScraper(CSVFeedSpider):
         #--------------------------------------------------------Documents Recorded--------------------------------------------------------------------#
         doc_rec1 = check_path(response.xpath('//*[@id="ContentPlaceHolder1_success"]/div/div[5]/div[3]/table/tr[1]/td/div[1]/div/text()').extract())
         doc_rec2 = check_path(response.xpath('//*[@id="ContentPlaceHolder1_success"]/div/div[5]/div[3]/table/tr[2]/td/div[1]/div/text()').extract())
-        doc_rec3 = check_path(response.xpath('///*[@id="ContentPlaceHolder1_success"]/div/div[5]/div[3]/table/tr[3]/td/div[1]/div/text()').extract())
+        doc_rec3 = check_path(response.xpath('//*[@id="ContentPlaceHolder1_success"]/div/div[5]/div[3]/table/tr[3]/td/div[1]/div/text()').extract())
         doc_rec4 = check_path(response.xpath('//*[@id="ContentPlaceHolder1_success"]/div/div[5]/div[3]/table/tr[4]/td/div[1]/div/text()').extract())
         doc_rec5 = check_path(response.xpath('//*[@id="ContentPlaceHolder1_success"]/div/div[5]/div[3]/table/tr[5]/td/div[1]/div/text()').extract())
 
+        doc_rec1_alt = check_path(response.xpath('//*[@id="ContentPlaceHolder1_success"]/div/div[5]/div[3]/table/tr[1]/td/div[2]/text()').extract())
+        doc_rec2_alt = check_path(response.xpath('//*[@id="ContentPlaceHolder1_success"]/div/div[5]/div[3]/table/tr[2]/td/div[2]/text()').extract())
+        doc_rec3_alt = check_path(response.xpath('//*[@id="ContentPlaceHolder1_success"]/div/div[5]/div[3]/table/tr[3]/td/div[2]/text()').extract())
+        doc_rec4_alt = check_path(response.xpath('//*[@id="ContentPlaceHolder1_success"]/div/div[5]/div[3]/table/tr[4]/td/div[2]/text()').extract())
+        doc_rec5_alt = check_path(response.xpath('//*[@id="ContentPlaceHolder1_success"]/div/div[5]/div[3]/table/tr[5]/td/div[2]/text()').extract())
+
+
+        if (doc_rec1 == 'NA'):
+            doc_rec1 = doc_rec1_alt
+        if (doc_rec2 == 'NA'):
+            doc_rec2 = doc_rec2_alt
+        if (doc_rec3 == 'NA'):
+            doc_rec3 = doc_rec3_alt
+        if (doc_rec4 == 'NA'):
+            doc_rec4 = doc_rec4_alt
+        if (doc_rec5 == 'NA'):
+            doc_rec5 = doc_rec5_alt
+
+
+        document1_record_string,document2_record_string,document3_record_string,document4_record_string,document5_record_string,document1_record_date,\
+        document2_record_date,document3_record_date,document4_record_date,document5_record_date = 'NA','NA','NA','NA','NA','NA','NA','NA','NA','NA'
+
+        if (len(doc_rec1.split("-")) > 1):
+            document1_record_string = doc_rec1.split("-")[1]
+            document1_record_date = doc_rec1.split("-")[2]
+
+        if (len(doc_rec2.split("-")) > 1):
+            document2_record_string = doc_rec2.split("-")[1]
+            document2_record_date = doc_rec2.split("-")[2]
+
+        if (len(doc_rec3.split("-")) > 1):
+            document3_record_string = doc_rec3.split("-")[1]
+            document3_record_date = doc_rec3.split("-")[2]
+
+        if (len(doc_rec4.split("-")) > 1):
+            document4_record_string = doc_rec4.split("-")[1]
+            document4_record_date = doc_rec4.split("-")[2]
+
+        if (len(doc_rec5.split("-")) > 1):
+            document5_record_string = doc_rec5.split("-")[1]
+            document5_record_date = doc_rec5.split("-")[2]
 
         #Tax Sales Flag
-        taxes_sold,foreclosure= 0,0
-        foreclosure_date= 'NA'
-        sale_indicator_list_filter,doc_list = [],[]
-
-
-        for x in year_0_tax_sale_indicator,year_1_tax_sale_indicator,year_2_tax_sale_indicator,year_3_tax_sale_indicator,year_4_tax_sale_indicator:
-            if x == None:
-                sale_indicator_list_filter.append('NA')
-            else:
-                sale_indicator_list_filter.append(x)
-
-        indicator_string = '\t'.join(sale_indicator_list_filter)
-
-        if "Taxes Sold" in indicator_string:
+        taxes_sold= 0
+        if ("Taxes Sold" in year_0_tax_sale_indicator) or ("Taxes Sold" in year_1_tax_sale_indicator) or ("Taxes Sold" in year_2_tax_sale_indicator) or ("Taxes Sold" in year_3_tax_sale_indicator) or ("Taxes Sold" in year_4_tax_sale_indicator):
             taxes_sold = 1
 
+
         #Tax Paid Flag
-        if paid_in_full_amount_year0 != None:
+        if paid_in_full_button1 == "Paid in Full":
             tax_paid_year0 = "Paid_Full"
         else:
             tax_paid_year0 = "Not_Paid"
 
-        if paid_in_full_amount_year1 != None:
+        if paid_in_full_button2 == "Paid in Full":
             tax_paid_year1 = "Paid_Full"
         else:
             tax_paid_year1 = "Not_Paid"
 
-        #Foreclosure Flag
-        for x in doc_rec1,doc_rec2,doc_rec3,doc_rec4,doc_rec5:
-            if x == None:
-                doc_list.append('NA')
-            else:
-                doc_list.append(x)
-
-        #Check if Lis Pendes Foreclosure
-        print(doc_list)
-        for x in doc_list:
-            print(x)
-            x_split = x.split("-")
-            print("hellll00")
-            print(len(x_split))
-            print(x_split)
-            if "FORECLOSURE" in x_split[1]:
-                print("CHACHNIGGGGGG")
-                foreclosure = 1
-                foreclosure_date = x_split[1]
 
         #--------------------Name Checks------------------------#
         owner_first_last_list = str(owner_name).split()
+
+
 
         if "LLC" in owner_name:
             owner_first = "LLC"
             owner_last = "LLC"
         else:
-            owner_first_last_list = str(owner_name).split()
-            owner_first = owner_first_last_list[0]
-            owner_last = owner_first_last_list[1]
+            if(len(owner_name)>1):
+                owner_first = owner_first_last_list[0]
+                owner_last = owner_first_last_list[1]
+            else:
+                owner_first =  owner_name
+                owner_last = owner_name
 
         #-------------------Mail Address Processing--------------#
         mail_cityStateZipList = str(mailing_city_zip_state).split(",")
@@ -444,13 +481,26 @@ class CookCountyScraper(CSVFeedSpider):
         item['mail_zip'] = mail_zip
 
         item['taxes_sold'] = taxes_sold
-        item['tax_paid_year0'] = tax_paid_year0
-        item['tax_paid_year1'] = tax_paid_year1
-        item['foreclosure'] = foreclosure
-        item['foreclosure_date'] = foreclosure_date
 
-        item['lot_square_footage'] = int(str(lot_square_footage).replace(',', ''))
-        item['building_square_footage'] = int(str(building_square_footage).replace(',', ''))
+        item['tax_paid_year0'] = tax_paid_year0
+        item['tax_paid_year0_amount'] = tax0
+        item['tax_paid_year1'] = tax_paid_year1
+        item['tax_paid_year1_amount'] = tax1
+
+        item['doc1_string'] = document1_record_string
+        item['doc1_date'] = document1_record_date
+        item['doc2_string'] = document2_record_string
+        item['doc2_date'] = document2_record_date
+        item['doc3_string'] = document3_record_string
+        item['doc3_date'] = document3_record_date
+        item['doc4_string'] = document4_record_string
+        item['doc4_date'] = document4_record_date
+        item['doc5_string'] = document5_record_string
+        item['doc5_date'] = document5_record_date
+
+
+        item['lot_square_footage'] = int(checkIfNa(str(lot_square_footage).replace(',', ''),'num'))
+        item['building_square_footage'] = int(checkIfNa(str(building_square_footage).replace(',', ''),'num'))
 
         return [scrapy.Request('http://www.cookcountyassessor.com/Property.aspx?mode=details&pin='+pin, callback=self.parse_characteristics,meta={'item': item,'pin':pin})]
 
@@ -475,18 +525,18 @@ class CookCountyScraper(CSVFeedSpider):
 
         item = response.meta['item']
         item['parcel'] = str(parcel).replace('-', '')
-        item['current_year_assessed_value'] = float(str(current_year_assessed_value).replace(',', '').replace('$',""))
-        item['prior_year_assessed_value'] = float(str(prior_year_assessed_value).replace(',', '').replace('$',""))
+        item['current_year_assessed_value'] = float(checkIfNa(str(current_year_assessed_value).replace(',', '').replace('$',""),'num'))
+        item['prior_year_assessed_value'] = float(checkIfNa(str(prior_year_assessed_value).replace(',', '').replace('$',""),'num'))
         item['property_use'] = property_use
         item['residence_type'] = residence_type
-        item['units'] = int(units)
+        item['units'] = int(checkIfNa(units,'num'))
         item['construction_type'] = construction_type
-        item['full_bathrooms'] = float(full_bathrooms)
-        item['half_bathrooms'] = float(half_bathrooms)
+        item['full_bathrooms'] = float(checkIfNa(full_bathrooms,'num'))
+        item['half_bathrooms'] = float(checkIfNa(half_bathrooms,'num'))
         item['basement'] = basement
         item['central_air'] = central_air
         item['garage_type'] = garage_type
-        item['age'] = int(age)
+        item['age'] = int(checkIfNa(age,'num'))
 
         item['home_owner_exemption'] = home_owner_exemption
         item['senior_citizen_exemption'] = senior_citizen_exemption
@@ -558,27 +608,27 @@ class MaricopaAPI(CSVFeedSpider):
         site_zip = site_zip_city_list[len(site_zip_city_list)-1]
         site_city = " ".join(site_zip_city_list[0:len(site_zip_city_list)-1])
 
-        item['parcel'] = pin
-        item['owner_first'] = owner_first
-        item['owner_last'] = owner_last
-        item['owner_name'] = owner_name
-        item['owner_full_address'] = owner_full_address
-        item['owner_street_address1'] = owner_street_address1
-        item['owner_city'] = owner_city
-        item['owner_state'] = owner_state
-        item['owner_zip'] = owner_zip
-        item['full_property_address'] = full_property_address
-        item['site_street'] = site_street
-        item['site_city'] = site_city
-        item['site_zip'] = site_zip
-        item['property_description'] = property_description
-        item['lot_size'] = float(lot_size)
-        item['property_type'] = property_type
-        item['rental'] = rental
-        item['value_0'] = float(value_0)
-        item['value_1'] = float(value_1)
-        item['value_2'] = float(value_2)
-        item['last_deed_date'] = last_deed_date
-        item['last_sale_price'] = float(last_sale_price)
+        item['parcel'] = checkIfNa(pin,'str')
+        item['owner_first'] = checkIfNa(owner_first,'str')
+        item['owner_last'] = checkIfNa(owner_last,'str')
+        item['owner_name'] = checkIfNa(owner_name,'str')
+        item['owner_full_address'] = checkIfNa(owner_full_address,'str')
+        item['owner_street_address1'] = checkIfNa(owner_street_address1,'str')
+        item['owner_city'] = checkIfNa(owner_city,'str')
+        item['owner_state'] = checkIfNa(owner_state,'str')
+        item['owner_zip'] = checkIfNa(owner_zip,'str')
+        item['full_property_address'] = checkIfNa(full_property_address,'str')
+        item['site_street'] = checkIfNa(site_street,'str')
+        item['site_city'] = checkIfNa(site_city,'str')
+        item['site_zip'] = checkIfNa(site_zip,'str')
+        item['property_description'] = checkIfNa(property_description,'str')
+        item['lot_size'] = float(checkIfNa(lot_size,'num'))
+        item['property_type'] = checkIfNa(property_type,'str')
+        item['rental'] = checkIfNa(rental,'num')
+        item['value_0'] = float(checkIfNa(value_0,'num'))
+        item['value_1'] = float(checkIfNa(value_1,'num'))
+        item['value_2'] = float(checkIfNa(value_2,'num'))
+        item['last_deed_date'] = checkIfNa(last_deed_date,'str')
+        item['last_sale_price'] = float(checkIfNa(last_sale_price,'num'))
 
         yield item

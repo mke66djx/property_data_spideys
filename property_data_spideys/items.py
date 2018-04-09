@@ -77,6 +77,7 @@ class DuvalCountyDescriptionItem(scrapy.Item):
 
 
 class CookCountyDescriptionItem(scrapy.Item):
+    list_pin = scrapy.Field()
     parcel = scrapy.Field()
     owner_name = scrapy.Field()
     owner_first = scrapy.Field()
@@ -112,8 +113,19 @@ class CookCountyDescriptionItem(scrapy.Item):
     taxes_sold = scrapy.Field()
     tax_paid_year0 = scrapy.Field()
     tax_paid_year1 = scrapy.Field()
-    foreclosure = scrapy.Field()
-    foreclosure_date = scrapy.Field()
+    tax_paid_year0_amount = scrapy.Field()
+    tax_paid_year1_amount = scrapy.Field()
+    doc1_string = scrapy.Field()
+    doc2_string = scrapy.Field()
+    doc3_string = scrapy.Field()
+    doc4_string = scrapy.Field()
+    doc5_string = scrapy.Field()
+    doc1_date = scrapy.Field()
+    doc2_date = scrapy.Field()
+    doc3_date = scrapy.Field()
+    doc4_date = scrapy.Field()
+    doc5_date = scrapy.Field()
+
 
 class MaricopaCountyDescriptionItem(scrapy.Item):
     parcel = scrapy.Field()

@@ -12,8 +12,9 @@ def db_connect():
     """
     return create_engine(get_project_settings().get("CONNECTION_STRING"))
 
-def create_table(engine):
-    DeclarativeBase.metadata.create_all(engine)
+def create_table(engine,ModelClass):
+    #DeclarativeBase.metadata.create_all(engine)
+    ModelClass.__table__.create(engine,checkfirst=True)
 
 class PierceCountyPropertyData(DeclarativeBase):
     __tablename__ = "pierceCounty"
@@ -124,9 +125,20 @@ class CookCountyPropertyData(DeclarativeBase):
 
     taxes_sold = Column('taxes_sold', Text())
     tax_paid_year0 = Column('tax_paid_year0', Text())
+    tax_paid_year0_amount = Column('tax_paid_year0_amount', Text())
     tax_paid_year1 = Column('tax_paid_year1', Text())
-    foreclosure = Column('foreclosure', Text())
-    foreclosure_date = Column('foreclosure_date', Text())
+    tax_paid_year1_amount = Column('tax_paid_year1_amount', Text())
+
+    record1 = Column('record1', Text())
+    record1_date = Column('record1_date', Text())
+    record2 = Column('record2', Text())
+    record2_date = Column('record2_date', Text())
+    record3 = Column('record3', Text())
+    record3_date = Column('record3_date', Text())
+    record4 = Column('record4', Text())
+    record4_date = Column('record4_date', Text())
+    record5 = Column('record5', Text())
+    record5_date = Column('record5_date', Text())
 
 
 class MaricopaCountyPropertyData(DeclarativeBase):
@@ -268,9 +280,21 @@ class CookPropertyDataTemp(DeclarativeBase):
 
     taxes_sold = Column('taxes_sold', Text())
     tax_paid_year0 = Column('tax_paid_year0', Text())
+    tax_paid_year0_amount = Column('tax_paid_year0_amount', Text())
     tax_paid_year1 = Column('tax_paid_year1', Text())
-    foreclosure = Column('foreclosure', Text())
-    foreclosure_date = Column('foreclosure_date', Text())
+    tax_paid_year1_amount = Column('tax_paid_year1_amount', Text())
+
+    record1 = Column('record1', Text())
+    record1_date = Column('record1_date', Text())
+    record2 = Column('record2', Text())
+    record2_date = Column('record2_date', Text())
+    record3 = Column('record3', Text())
+    record3_date = Column('record3_date', Text())
+    record4 = Column('record4', Text())
+    record4_date = Column('record4_date', Text())
+    record5 = Column('record5', Text())
+    record5_date = Column('record5_date', Text())
+
 
 class MaricopaPropertyDataTemp(DeclarativeBase):
     __tablename__ = "maricopaCountyTemp"

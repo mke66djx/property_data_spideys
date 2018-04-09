@@ -1,6 +1,7 @@
-from property_data_spideys.models import CookPropertyDataTemp,MaricopaPropertyDataTemp,PiercePropertyDataTemp,PierceSalesDataTemp,DuvalSalesDataTemp,DuvalPropertyDataTemp,db_connect,create_table
+from property_data_spideys.models import CookCountyPropertyData,CookPropertyDataTemp,MaricopaPropertyDataTemp,PiercePropertyDataTemp,PierceSalesDataTemp,DuvalSalesDataTemp,DuvalPropertyDataTemp,db_connect,create_table
 import functools
 from sqlalchemy.orm import (mapper,sessionmaker)
+from scrapy.exceptions import DropItem
 #---------------------------------------------------------------------------------------------------------
 #-----------------------------------------Full Table Update Pipelines-------------------------------------
 #---------------------------------------------------------------------------------------------------------
@@ -144,7 +145,8 @@ class DuvalFullPipeline(object):
 class CookFullPipeline(object):
     def __init__(self):
         self.engine = db_connect()
-        create_table(self.engine)
+        create_table(self.engine,CookPropertyDataTemp)
+        create_table(self.engine,CookCountyPropertyData)
         self.Session = sessionmaker(bind=self.engine)
 
     def open_spider(self, spider):
@@ -163,57 +165,72 @@ class CookFullPipeline(object):
             command.downgrade(alembic_cfg, "base")
 
     def process_item(self,item,spider):
-        session = self.Session()
 
-        #Build a row
+        session = self.Session()
         propertyDataTemp = CookPropertyDataTemp()
 
-        propertyDataTemp.parcel = item["parcel"]
-        propertyDataTemp.owner_name = item["owner_name"]
-        propertyDataTemp.owner_first = item["owner_first"]
-        propertyDataTemp.owner_last = item["owner_last"]
+        if(item["parcel"] != 'NA'):
 
-        propertyDataTemp.site_address = item["site_address"]
-        propertyDataTemp.site_address_city = item["site_address_city"]
-        propertyDataTemp.site_address_zip = item["site_address_zip"]
-        propertyDataTemp.site_address_township = item["site_address_township"]
+            propertyDataTemp.parcel = item["parcel"]
+            propertyDataTemp.owner_name = item["owner_name"]
+            propertyDataTemp.owner_first = item["owner_first"]
+            propertyDataTemp.owner_last = item["owner_last"]
 
-        propertyDataTemp.mailing_address = item["mailing_address"]
-        propertyDataTemp.mail_city = item["mail_city"]
-        propertyDataTemp.mail_state = item["mail_state"]
-        propertyDataTemp.mail_zip = item["mail_zip"]
+            propertyDataTemp.site_address = item["site_address"]
+            propertyDataTemp.site_address_city = item["site_address_city"]
+            propertyDataTemp.site_address_zip = item["site_address_zip"]
+            propertyDataTemp.site_address_township = item["site_address_township"]
 
-        propertyDataTemp.lot_square_footage = item["lot_square_footage"]
-        propertyDataTemp.building_square_footage = item["building_square_footage"]
-        propertyDataTemp.current_year_assessed_value = item["current_year_assessed_value"]
-        propertyDataTemp.prior_year_assessed_value = item["prior_year_assessed_value"]
-        propertyDataTemp.property_use = item["property_use"]
-        propertyDataTemp.residence_type = item["residence_type"]
-        propertyDataTemp.units = item["units"]
-        propertyDataTemp.construction_type = item["construction_type"]
-        propertyDataTemp.full_bathrooms = item["full_bathrooms"]
-        propertyDataTemp.half_bathrooms = item["half_bathrooms"]
-        propertyDataTemp.central_air = item["central_air"]
-        propertyDataTemp.basement = item["basement"]
-        propertyDataTemp.garage_type = item["garage_type"]
-        propertyDataTemp.home_owner_exemption = item["home_owner_exemption"]
-        propertyDataTemp.senior_citizen_exemption = item["senior_citizen_exemption"]
+            propertyDataTemp.mailing_address = item["mailing_address"]
+            propertyDataTemp.mail_city = item["mail_city"]
+            propertyDataTemp.mail_state = item["mail_state"]
+            propertyDataTemp.mail_zip = item["mail_zip"]
 
-        propertyDataTemp.taxes_sold = item["taxes_sold"]
-        propertyDataTemp.tax_paid_year0 = item["tax_paid_year0"]
-        propertyDataTemp.tax_paid_year1 = item["tax_paid_year1"]
-        propertyDataTemp.foreclosure = item["foreclosure"]
-        propertyDataTemp.foreclosure_date = item["foreclosure_date"]
+            propertyDataTemp.lot_square_footage = item["lot_square_footage"]
+            propertyDataTemp.building_square_footage = item["building_square_footage"]
+            propertyDataTemp.current_year_assessed_value = item["current_year_assessed_value"]
+            propertyDataTemp.prior_year_assessed_value = item["prior_year_assessed_value"]
+            propertyDataTemp.property_use = item["property_use"]
+            propertyDataTemp.residence_type = item["residence_type"]
+            propertyDataTemp.units = item["units"]
+            propertyDataTemp.construction_type = item["construction_type"]
+            propertyDataTemp.full_bathrooms = item["full_bathrooms"]
+            propertyDataTemp.half_bathrooms = item["half_bathrooms"]
+            propertyDataTemp.central_air = item["central_air"]
+            propertyDataTemp.basement = item["basement"]
+            propertyDataTemp.garage_type = item["garage_type"]
+            propertyDataTemp.home_owner_exemption = item["home_owner_exemption"]
+            propertyDataTemp.senior_citizen_exemption = item["senior_citizen_exemption"]
 
-        try:
-            session.add(propertyDataTemp)
-            session.commit()
-        except:
-            session.rollback()
-            raise
-        finally:
-            session.close()
-        return item
+            propertyDataTemp.taxes_sold = item["taxes_sold"]
+            propertyDataTemp.tax_paid_year0 = item["tax_paid_year0"]
+            propertyDataTemp.tax_paid_year1 = item["tax_paid_year1"]
+            propertyDataTemp.tax_paid_year0_amount = item["tax_paid_year0_amount"]
+            propertyDataTemp.tax_paid_year1_amount = item["tax_paid_year1_amount"]
+
+
+            propertyDataTemp.record1 = item["doc1_string"]
+            propertyDataTemp.record2 = item["doc2_string"]
+            propertyDataTemp.record3 = item["doc3_string"]
+            propertyDataTemp.record4 = item["doc4_string"]
+            propertyDataTemp.record5 = item["doc5_string"]
+            propertyDataTemp.record1_date = item["doc1_date"]
+            propertyDataTemp.record2_date = item["doc2_date"]
+            propertyDataTemp.record3_date = item["doc3_date"]
+            propertyDataTemp.record4_date = item["doc4_date"]
+            propertyDataTemp.record5_date = item["doc5_date"]
+
+            try:
+                session.add(propertyDataTemp)
+                session.commit()
+            except:
+                session.rollback()
+                raise
+            finally:
+                session.close()
+            return item
+        else:
+            raise DropItem("Invalid Parcel Found: %s" % item["parcel"])
 
 class MaricopaFullPipeline(object):
     def __init__(self):
@@ -230,7 +247,7 @@ class MaricopaFullPipeline(object):
     def upgrade(self):
         from alembic.config import Config
         from alembic import command
-        alembic_cfg = Config(r"C:/Users/ebeluli/Desktop/property_data_spideys/alembic.ini")
+        alembic_cfg = Config('alembic.ini')
         with self.engine.begin() as connection:
             alembic_cfg.attributes['connection'] = connection
             command.upgrade(alembic_cfg, "9dcae9ce3303")
