@@ -9,11 +9,12 @@ from property_data_spideys import pipelines
 import locale
 import os
 import os.path
+import re
 
 def getStartUrlFilePath(parcel_file):
     relative_file_path = 'ParcelsLists/'+parcel_file
     filepath = os.path.abspath(os.path.join(os.getcwd(), relative_file_path))
-    start_url_path = "file://"+filepath
+    start_url_path = "file:///"+filepath
     return start_url_path
 
 def check_path(xpath_return):
@@ -312,7 +313,6 @@ class CookCountyScraper(CSVFeedSpider):
         'ITEM_PIPELINES': {'property_data_spideys.pipelines.CookFullPipeline': 300}
         }
 
-
     def __init__(self):
         dispatcher.connect(self.spider_closed, signals.spider_closed)
 
@@ -321,24 +321,34 @@ class CookCountyScraper(CSVFeedSpider):
 
     def parse_row(self,response,row):
         pin = row['parcel']
-
         #General summary page, will be used for owner info
         request = scrapy.Request('http://www.cookcountypropertyinfo.com/cookviewerpinresults.aspx?pin='+pin,dont_filter = True,callback=self.parse_summary)
         request.meta['item'] = CookCountyDescriptionItem()
         request.meta['pin'] = pin
-        request.meta['retries'] = 3
+
         return [request]
 
     def parse_summary(self, response):
         parcel_title = check_path(response.xpath('//*[@id="ContentPlaceHolder1_lblResultTitle"]/text()').extract())
-        print(response.xpath('//body//p//text()').extract())
-        print(response)
-        print(response.meta['pin'])
-        if parcel_title == 'NA':
-            if int(response.meta['retries'])>0:     
-                response.meta['retries'] = response.meta['retries'] -1
-                return [scrapy.Request('http://www.cookcountypropertyinfo.com/cookviewerpinresults.aspx?pin='+response.meta['pin'],dont_filter = True,callback=self.parse_summary)]
-            
+        parcel_stripped = parcel_title.replace("-", "")
+
+        item = response.meta['item']
+        pin = response.meta['pin']
+        #retries = response.meta['retries']
+
+        if parcel_title == 'NA' or parcel_stripped != pin:
+            #if int(response.meta['retries'])>0:
+            #retries = response.meta['retries'] -1
+            print(response)
+            return [scrapy.Request('http://www.cookcountypropertyinfo.com/cookviewerpinresults.aspx?pin='+pin,meta={'item':item,'pin':pin},dont_filter = True,callback=self.parse_summary)]
+
+        print(response.request.meta['redirect_urls'])
+        # if parcel_stripped != pin:
+        #     print(response.request.meta['redirect_urls'])
+        #     print(parcel_stripped,pin)
+        #     print("No Match in first part!!!!!!!!!!!!!!!")
+        #     raise AttributeError
+
         site_address_street = check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyAddress"]/text()').extract())
         site_address_city = check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyCity"]/text()').extract())
         site_address_zip = check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyZip"]/text()').extract())
@@ -360,6 +370,9 @@ class CookCountyScraper(CSVFeedSpider):
         # Check if last two years are paid in full
         paid_in_full_button1 = check_path(response.xpath('//*[@id="taxpaid'+tax_year0.split(":")[0]+'-button"]/span/text()').extract())
         paid_in_full_button2 = check_path(response.xpath('//*[@id="taxpaid'+tax_year1.split(":")[0]+'-button"]/span/text()').extract())
+
+        tax_not_paid0 = check_path(response.xpath('//*[@id="taxpayonline2'+tax_year0.split(":")[0]+'-button"]/span/text()').extract())
+        tax_not_paid1 = check_path(response.xpath('//*[@id="taxpayonline2'+tax_year1.split(":")[0]+'-button"]/span/text()').extract())
 
         tax0 = check_path(response.xpath('//*[@id="ContentPlaceHolder1_TaxBillInfo_rptTaxBill_taxBillAmount_0"]/text()').extract())
         tax1 = check_path(response.xpath('//*[@id="ContentPlaceHolder1_TaxBillInfo_rptTaxBill_taxBillAmount_1"]/text()').extract())
@@ -430,25 +443,36 @@ class CookCountyScraper(CSVFeedSpider):
         #Tax Paid Flag
         if paid_in_full_button1 == "Paid in Full":
             tax_paid_year0 = "Paid_Full"
+        elif 'Pay Online' in tax_not_paid0 :
+            m = re.search('Pay Online:\s\$(\d+.\d+)', tax_not_paid0)
+            if m:
+                tax_paid_year0 = m.group(1)
         else:
-            tax_paid_year0 = "Not_Paid"
+            tax_paid_year0 = 'NA'
 
         if paid_in_full_button2 == "Paid in Full":
             tax_paid_year1 = "Paid_Full"
+        elif 'Pay Online' in tax_not_paid1 :
+            m = re.search('Pay Online:\s\$(\d+.\d+)', tax_not_paid1)
+            if m:
+                tax_paid_year1 = m.group(1)
         else:
-            tax_paid_year1 = "Not_Paid"
+            tax_paid_year1 = 'NA'
 
 
-        #--------------------Name Checks------------------------#
+    #--------------------Name Checks------------------------#
+        owner_2_first = 'NA'
         owner_first_last_list = str(owner_name).split()
-
-
-
+        m = re.search('(\w+)\s&\s(\w+)\s(\w+)', owner_name)
         if "LLC" in owner_name:
             owner_first = "LLC"
             owner_last = "LLC"
+        elif m:
+            owner_first= m.group(1)
+            owner_2_first = m.group(2)
+            owner_last= m.group(3)
         else:
-            if(len(owner_name)>1):
+            if(len(owner_first_last_list)>1):
                 owner_first = owner_first_last_list[0]
                 owner_last = owner_first_last_list[1]
             else:
@@ -456,18 +480,21 @@ class CookCountyScraper(CSVFeedSpider):
                 owner_last = owner_name
 
         #-------------------Mail Address Processing--------------#
-        mail_cityStateZipList = str(mailing_city_zip_state).split(",")
-        mail_state_zip_list = mail_cityStateZipList[1].split(" ")
-        mail_city = mail_cityStateZipList[0]
-        mail_state = mail_state_zip_list[1]
-        mail_zip = mail_state_zip_list[2]
+        if(mailing_city_zip_state != 'NA'):
+            mail_cityStateZipList = str(mailing_city_zip_state).split(",")
+            mail_state_zip_list = mail_cityStateZipList[1].split(" ")
+            mail_city = mail_cityStateZipList[0]
+            mail_state = mail_state_zip_list[1]
+            mail_zip = mail_state_zip_list[2]
+        else:
+            mail_city = 'NA'
+            mail_state = 'NA'
+            mail_zip = 'NA'
 
 
-        item = response.meta['item']
-        pin = response.meta['pin']
-        item['parcel'] = pin
         item['owner_name'] = owner_name
         item['owner_first'] = owner_first
+        item['owner_2_first'] = owner_2_first
         item['owner_last'] = owner_last
 
         item['site_address'] = ",".join([site_address_street,site_address_city,"IL",site_address_zip])
@@ -482,10 +509,11 @@ class CookCountyScraper(CSVFeedSpider):
 
         item['taxes_sold'] = taxes_sold
 
+
         item['tax_paid_year0'] = tax_paid_year0
-        item['tax_paid_year0_amount'] = tax0
+        item['tax_paid_year0_amount'] = float(checkIfNa(str(tax0).replace(',', '').replace('$',""),'num'))
         item['tax_paid_year1'] = tax_paid_year1
-        item['tax_paid_year1_amount'] = tax1
+        item['tax_paid_year1_amount'] = float(checkIfNa(str(tax1).replace(',', '').replace('$',""),'num'))
 
         item['doc1_string'] = document1_record_string
         item['doc1_date'] = document1_record_date
@@ -523,6 +551,9 @@ class CookCountyScraper(CSVFeedSpider):
         home_owner_exemption = check_path(response.xpath('//*[@id="exemptions"]/div[2]/div[1]/span[2]/text()').extract())
         senior_citizen_exemption = check_path(response.xpath('//*[@id="exemptions"]/div[2]/div[2]/span[2]/text()').extract())
 
+        if(str(parcel).replace('-', '')!= response.meta['pin']):
+            print("Does not match in second step either!!!!!!!!!!!!!!!")
+
         item = response.meta['item']
         item['parcel'] = str(parcel).replace('-', '')
         item['current_year_assessed_value'] = float(checkIfNa(str(current_year_assessed_value).replace(',', '').replace('$',""),'num'))
@@ -544,7 +575,7 @@ class CookCountyScraper(CSVFeedSpider):
         return [item]
 
 
-class MaricopaAPI(CSVFeedSpider):
+class MaricopaSingleParcelAPI(CSVFeedSpider):
     name = "maricopa_county_worker"
     authorization_token = '5ae1363b-28b8-11e8-9917-00155da2c015'
 
@@ -632,3 +663,4 @@ class MaricopaAPI(CSVFeedSpider):
         item['last_sale_price'] = float(checkIfNa(last_sale_price,'num'))
 
         yield item
+

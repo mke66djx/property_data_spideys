@@ -175,6 +175,7 @@ class CookFullPipeline(object):
             propertyDataTemp.owner_name = item["owner_name"]
             propertyDataTemp.owner_first = item["owner_first"]
             propertyDataTemp.owner_last = item["owner_last"]
+            propertyDataTemp.owner_2_first = item["owner_2_first"]
 
             propertyDataTemp.site_address = item["site_address"]
             propertyDataTemp.site_address_city = item["site_address_city"]

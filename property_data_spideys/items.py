@@ -81,6 +81,7 @@ class CookCountyDescriptionItem(scrapy.Item):
     parcel = scrapy.Field()
     owner_name = scrapy.Field()
     owner_first = scrapy.Field()
+    owner_2_first = scrapy.Field()
     owner_last = scrapy.Field()
 
     site_address = scrapy.Field()

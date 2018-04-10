@@ -96,6 +96,7 @@ class CookCountyPropertyData(DeclarativeBase):
     parcel = Column('parcel',String(20),primary_key=True)
     owner_name = Column('owner_name', Text())
     owner_first = Column('owner_first', Text())
+    owner_2_first = Column('owner_2_first', Text())
     owner_last = Column('owner_last', Text())
     site_address = Column('site_address', Text())
     site_address_city = Column('site_address_city', Text())
@@ -251,6 +252,7 @@ class CookPropertyDataTemp(DeclarativeBase):
     parcel = Column('parcel',String(20),primary_key=True)
     owner_name = Column('owner_name', Text())
     owner_first = Column('owner_first', Text())
+    owner_2_first = Column('owner_2_first', Text())
     owner_last = Column('owner_last', Text())
     site_address = Column('site_address', Text())
     site_address_city = Column('site_address_city', Text())
@@ -280,9 +282,9 @@ class CookPropertyDataTemp(DeclarativeBase):
 
     taxes_sold = Column('taxes_sold', Text())
     tax_paid_year0 = Column('tax_paid_year0', Text())
-    tax_paid_year0_amount = Column('tax_paid_year0_amount', Text())
+    tax_paid_year0_amount = Column('tax_paid_year0_amount', Float(7))
     tax_paid_year1 = Column('tax_paid_year1', Text())
-    tax_paid_year1_amount = Column('tax_paid_year1_amount', Text())
+    tax_paid_year1_amount = Column('tax_paid_year1_amount', Float(7))
 
     record1 = Column('record1', Text())
     record1_date = Column('record1_date', Text())
@@ -294,6 +296,8 @@ class CookPropertyDataTemp(DeclarativeBase):
     record4_date = Column('record4_date', Text())
     record5 = Column('record5', Text())
     record5_date = Column('record5_date', Text())
+
+
 
 
 class MaricopaPropertyDataTemp(DeclarativeBase):
