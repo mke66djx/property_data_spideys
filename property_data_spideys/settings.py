@@ -38,9 +38,7 @@ ROBOTSTXT_OBEY=False
 # The download delay setting will honor only one of:
 CONCURRENT_REQUESTS_PER_DOMAIN = 1
 CONCURRENT_REQUESTS_PER_IP = 1
-
-REDIRECT_MAX_TIMES = 1
-REDIRECT_MAX_METAREFRESH_DELAY = 100
+#COOKIES_ENABLED = False
 
 # Disable cookies (enabled by default)
 #COOKIES_ENABLED = False
@@ -81,6 +79,7 @@ ITEM_PIPELINES = {
     'property_data_spideys.pipelines.DuvalRowPipeline': 300,
     'property_data_spideys.pipelines.CookFullPipeline': 300,
     'property_data_spideys.pipelines.MaricopaFullPipeline': 300,
+    'property_data_spideys.pipelines.MaricopaAddToPipeline': 300,
     'property_data_spideys.pipelines.CookRowPipeline': 300
 }
 

@@ -1,11 +1,12 @@
-from property_data_spideys.models import CookCountyPropertyData,CookPropertyDataTemp,MaricopaPropertyDataTemp,PiercePropertyDataTemp,PierceSalesDataTemp,DuvalSalesDataTemp,DuvalPropertyDataTemp,db_connect,create_table
+from property_data_spideys.models import MaricopaCountyPropertyData,CookCountyPropertyData,CookPropertyDataTemp,MaricopaPropertyDataTemp,PiercePropertyDataTemp,PierceSalesDataTemp,DuvalSalesDataTemp,DuvalPropertyDataTemp,db_connect,create_table
 import functools
 from sqlalchemy.orm import (mapper,sessionmaker)
 from scrapy.exceptions import DropItem
 #---------------------------------------------------------------------------------------------------------
 #-----------------------------------------Full Table Update Pipelines-------------------------------------
 #---------------------------------------------------------------------------------------------------------
-
+#(Non Blocking) - Used to replace/update an entire table
+# by first creatinga temp through series of inserts
 class PierceFullPipeline(object):
     def __init__(self):
         self.engine = db_connect()
@@ -79,6 +80,8 @@ class PierceFullPipeline(object):
             session.close()
         return item
 
+#(Non Blocking) - Used to replace/update an entire table
+# by first creatinga temp through series of inserts
 class DuvalFullPipeline(object):
     def __init__(self):
         self.engine = db_connect()
@@ -142,6 +145,8 @@ class DuvalFullPipeline(object):
             session.close()
         return item
 
+#(Non Blocking) - Used to replace/update an entire table
+# by first creatinga temp through series of inserts
 class CookFullPipeline(object):
     def __init__(self):
         self.engine = db_connect()
@@ -233,6 +238,8 @@ class CookFullPipeline(object):
         else:
             raise DropItem("Invalid Parcel Found: %s" % item["parcel"])
 
+#(Non Blocking) - Used to replace/update an entire table
+# by first creatinga temp through series of inserts
 class MaricopaFullPipeline(object):
     def __init__(self):
         self.engine = db_connect()
@@ -287,6 +294,60 @@ class MaricopaFullPipeline(object):
 
         try:
             session.add(propertyDataTemp)
+            session.commit()
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+        return item
+
+#(Blocking)- Used to add new items to existing Maricopa County table
+class MaricopaAddToPipeline(object):
+    def __init__(self):
+        self.engine = db_connect()
+        create_table(self.engine)
+        self.Session = sessionmaker(bind=self.engine)
+
+    def open_spider(self, spider):
+        spider.myPipeline = self
+
+    def close_spider(self,spider):
+        pass
+
+    def process_item(self,item,spider):
+        session = self.Session()
+
+        propertyData = MaricopaCountyPropertyData()
+
+        propertyData.parcel = item["parcel"]
+        propertyData.owner_name = item["owner_name"]
+        propertyData.owner_first = item["owner_first"]
+        propertyData.owner_last = item["owner_last"]
+        propertyData.owner_full_address = item["owner_full_address"]
+        propertyData.owner_street_address1 = item["owner_street_address1"]
+        propertyData.owner_city = item["owner_city"]
+        propertyData.owner_state = item["owner_state"]
+        propertyData.owner_zip = item["owner_zip"]
+        propertyData.full_property_address = item["full_property_address"]
+        propertyData.site_street = item["site_street"]
+        propertyData.site_city = item["site_city"]
+        propertyData.site_zip = item["site_zip"]
+        propertyData.property_description = item["property_description"]
+        propertyData.lot_size = item["lot_size"]
+        propertyData.property_type = item["property_type"]
+        #propertyDataTemp.current_balance_due = item["current_balance_due"]
+        propertyData.rental = item["rental"]
+        propertyData.value_0 = item["value_0"]
+        propertyData.value_1 = item["value_1"]
+        propertyData.value_2 = item["value_2"]
+
+        propertyData.last_deed_date = item["last_deed_date"]
+        propertyData.last_sale_price = item["last_sale_price"]
+
+
+        try:
+            session.add(propertyData)
             session.commit()
         except:
             session.rollback()

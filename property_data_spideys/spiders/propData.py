@@ -334,20 +334,6 @@ class CookCountyScraper(CSVFeedSpider):
 
         item = response.meta['item']
         pin = response.meta['pin']
-        #retries = response.meta['retries']
-
-        if parcel_title == 'NA' or parcel_stripped != pin:
-            #if int(response.meta['retries'])>0:
-            #retries = response.meta['retries'] -1
-            print(response)
-            return [scrapy.Request('http://www.cookcountypropertyinfo.com/cookviewerpinresults.aspx?pin='+pin,meta={'item':item,'pin':pin},dont_filter = True,callback=self.parse_summary)]
-
-        print(response.request.meta['redirect_urls'])
-        # if parcel_stripped != pin:
-        #     print(response.request.meta['redirect_urls'])
-        #     print(parcel_stripped,pin)
-        #     print("No Match in first part!!!!!!!!!!!!!!!")
-        #     raise AttributeError
 
         site_address_street = check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyAddress"]/text()').extract())
         site_address_city = check_path(response.xpath('//*[@id="ContentPlaceHolder1_PropertyInfo_propertyCity"]/text()').extract())
@@ -582,6 +568,7 @@ class MaricopaSingleParcelAPI(CSVFeedSpider):
     start_urls = [getStartUrlFilePath("maricopa_parcels.csv")]
 
     custom_settings = {'ITEM_PIPELINES': {'property_data_spideys.pipelines.MaricopaFullPipeline': 400}}
+    #custom_settings = {'ITEM_PIPELINES': {'property_data_spideys.pipelines.MaricopaAddToPipeline': 400}}
 
     def __init__(self):
         dispatcher.connect(self.spider_closed, signals.spider_closed)
@@ -591,7 +578,7 @@ class MaricopaSingleParcelAPI(CSVFeedSpider):
 
     def parse_row(self,response,row):
         pin = row['parcel']
-        headerss = {"X-MC-AUTH":"%s" %(MaricopaAPI.authorization_token)}
+        headerss = {"X-MC-AUTH":"%s" %(MaricopaSingleParcelAPI.authorization_token)}
         request = scrapy.Request('https://api.mcassessor.maricopa.gov/api/parcel/'+pin,headers=headerss,dont_filter = True,callback=self.parse_json)
         request.meta['item'] = MaricopaCountyDescriptionItem()
         request.meta['pin'] = pin
@@ -623,7 +610,7 @@ class MaricopaSingleParcelAPI(CSVFeedSpider):
         last_deed_date = jsonresponse["Owner"]["DeedDate"]
         last_sale_price = jsonresponse["Owner"]["SalePrice"]
 
-        #--------------------------Owner Name Processing-----------------------------#
+        #-----------------------------Owner Name Processing-----------------------------#
         if "LLC" in owner_name:
             owner_first = "LLC"
             owner_last = "LLC"
@@ -639,6 +626,7 @@ class MaricopaSingleParcelAPI(CSVFeedSpider):
         site_zip = site_zip_city_list[len(site_zip_city_list)-1]
         site_city = " ".join(site_zip_city_list[0:len(site_zip_city_list)-1])
 
+        #------------------------Build Item Obj-----------------------------------------#
         item['parcel'] = checkIfNa(pin,'str')
         item['owner_first'] = checkIfNa(owner_first,'str')
         item['owner_last'] = checkIfNa(owner_last,'str')
