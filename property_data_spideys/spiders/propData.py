@@ -32,7 +32,7 @@ def checkIfNa(string,type):
     else:
         return string
 
-
+#Scraper for Pierce County- includes property char,taxes & owner info
 class PierceCountyScraper(CSVFeedSpider):
     name = "pierce_county_spider"
     start_urls = [getStartUrlFilePath("pierce_parcels.csv")]
@@ -192,7 +192,7 @@ class PierceCountyScraper(CSVFeedSpider):
         #Sales page provides sales records if any sales since '99
         return [item]
 
-
+#Scraper for Duval County- includes property char,taxes & owner info
 class DuvalCountyScraper(CSVFeedSpider):
     name = "duval_county_spider"
     start_urls = [getStartUrlFilePath("duval_parcels.csv")]
@@ -305,7 +305,51 @@ class DuvalCountyScraper(CSVFeedSpider):
 
         yield item
 
+#Sales Scraper for Duval County- includes parcel sales data
+class DuvalCountySalesScraper(CSVFeedSpider):
+    name = "duval_sales_spider"
+    start_urls = [getStartUrlFilePath("duval_parcels.csv")]
 
+    def __init__(self):
+        dispatcher.connect(self.spider_closed, signals.spider_closed)
+        #This will later be passed in as argument by spider caller
+
+    def spider_closed(self, spider):
+        pass
+
+    def parse_row(self,response,row):
+        pin = row['parcel']
+        #General summary page, will b e used for owner info
+        request = scrapy.Request('http://apps.coj.net/PAO_PropertySearch/Basic/Detail.aspx?RE='+pin, callback=self.parse_summary)
+        request.meta['item'] = DuvalCountyDescriptionItem()
+        request.meta['pin'] = pin
+        return [request]
+
+    #Chain data extraction and consolidate into one item
+    def parse_summary(self, response):
+
+        rows = check_path(response.xpath('count(//*[@id="ctl00_cphBody_gridSalesHistory"]/tr)'))
+        print(rows.extract())
+        for x in range(0,int(float(rows.extract()))):
+            date = check_path(response.xpath('//*[@id="ctl00_cphBody_gridSalesHistory"]/tr['+str(x)+']/td[2]/text()').extract())
+            price = check_path(response.xpath('//*[@id="ctl00_cphBody_gridSalesHistory"]/tr['+str(x)+']/td[3]/text()').extract())
+            document =check_path(response.xpath('//*[@id="ctl00_cphBody_gridSalesHistory"]/tr['+str(x)+']/td[4]/text()').extract())
+            print(date)
+            print(price)
+            print(document)
+
+        item = response.meta['item']
+        # item['parcel'] = str(parcel).replace('-', '')
+        # item['owner_name'] = owner_name
+
+        #Need to get taxes owed
+        #http://fl-duval-taxcollector.publicaccessnow.com/propertytaxsearch/accountdetail.aspx?p=019089-0000
+
+        yield item
+
+
+#Scraper for Duval County- includes property char & taxes,owner info,
+# document records,unpaid taxes, sold taxes,exemptions
 class CookCountyScraper(CSVFeedSpider):
     name = "cook_county_spider"
     start_urls = [getStartUrlFilePath("cook_parcels.csv")]
@@ -560,7 +604,7 @@ class CookCountyScraper(CSVFeedSpider):
 
         return [item]
 
-
+#Scraper for Duval County- includes property char & owner info,
 class MaricopaSingleParcelAPI(CSVFeedSpider):
     name = "maricopa_county_worker"
     authorization_token = '5ae1363b-28b8-11e8-9917-00155da2c015'
@@ -651,4 +695,3 @@ class MaricopaSingleParcelAPI(CSVFeedSpider):
         item['last_sale_price'] = float(checkIfNa(last_sale_price,'num'))
 
         yield item
-

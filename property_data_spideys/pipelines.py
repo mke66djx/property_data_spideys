@@ -1,4 +1,4 @@
-from property_data_spideys.models import MaricopaCountyPropertyData,CookCountyPropertyData,CookPropertyDataTemp,MaricopaPropertyDataTemp,PiercePropertyDataTemp,PierceSalesDataTemp,DuvalSalesDataTemp,DuvalPropertyDataTemp,db_connect,create_table
+from property_data_spideys.models import DuvalCountyPropertyData,PierceCountyPropertyData,MaricopaCountyPropertyData,CookCountyPropertyData,CookPropertyDataTemp,MaricopaPropertyDataTemp,PiercePropertyDataTemp,PierceSalesDataTemp,DuvalSalesDataTemp,DuvalPropertyDataTemp,db_connect,create_table
 import functools
 from sqlalchemy.orm import (mapper,sessionmaker)
 from scrapy.exceptions import DropItem
@@ -10,7 +10,8 @@ from scrapy.exceptions import DropItem
 class PierceFullPipeline(object):
     def __init__(self):
         self.engine = db_connect()
-        create_table(self.engine)
+        create_table(self.engine,PiercePropertyDataTemp)
+        create_table(self.engine,PierceCountyPropertyData)
         self.Session = sessionmaker(bind=self.engine)
 
     def open_spider(self, spider):
@@ -85,7 +86,8 @@ class PierceFullPipeline(object):
 class DuvalFullPipeline(object):
     def __init__(self):
         self.engine = db_connect()
-        create_table(self.engine)
+        create_table(self.engine,DuvalPropertyDataTemp)
+        create_table(self.engine,DuvalCountyPropertyData)
         self.Session = sessionmaker(bind=self.engine)
 
     def open_spider(self, spider):
@@ -239,11 +241,12 @@ class CookFullPipeline(object):
             raise DropItem("Invalid Parcel Found: %s" % item["parcel"])
 
 #(Non Blocking) - Used to replace/update an entire table
-# by first creatinga temp through series of inserts
+# by first creating a temp through series of inserts
 class MaricopaFullPipeline(object):
     def __init__(self):
         self.engine = db_connect()
-        create_table(self.engine)
+        create_table(self.engine,MaricopaPropertyDataTemp)
+        create_table(self.engine,MaricopaCountyPropertyData)
         self.Session = sessionmaker(bind=self.engine)
 
     def open_spider(self, spider):
@@ -306,7 +309,7 @@ class MaricopaFullPipeline(object):
 class MaricopaAddToPipeline(object):
     def __init__(self):
         self.engine = db_connect()
-        create_table(self.engine)
+        create_table(self.engine,MaricopaCountyPropertyData)
         self.Session = sessionmaker(bind=self.engine)
 
     def open_spider(self, spider):
@@ -358,123 +361,3 @@ class MaricopaAddToPipeline(object):
 #---------------------------------------------------------------------------------------------------------
 #-----------------------------------------Row Update Pipelines--------------------------------------------
 #---------------------------------------------------------------------------------------------------------
-
-class PierceRowPipeline(object):
-    def __init__(self):
-        self.engine = db_connect()
-        create_table(self.engine)
-        self.Session = sessionmaker(bind=self.engine)
-
-    def open_spider(self, spider):
-        spider.myPipeline = self
-
-    def close_spider(self,spider):
-        pass
-
-    def process_item(self,item,spider):
-
-        session = self.Session()
-
-        #Build a row
-        propertyDataTemp = PiercePropertyDataTemp()
-        salesDataTemp = PierceSalesDataTemp()
-
-        propertyDataTemp.parcel = item["parcel"]
-        propertyDataTemp.mailing_address = item["mailing_address"]
-        propertyDataTemp.owner_name = item["owner_name"]
-        propertyDataTemp.site_address = item["site_address"]
-        propertyDataTemp.property_type = item["property_type"]
-        propertyDataTemp.occupancy = item["occupancy"]
-        propertyDataTemp.year_built = item["year_built"]
-        propertyDataTemp.adj_year_built = item["adj_year_built"]
-        propertyDataTemp.units = item["units"]
-        propertyDataTemp.bedrooms = item["bedrooms"]
-        propertyDataTemp.baths = item["baths"]
-        propertyDataTemp.siding_type = item["siding_type"]
-        propertyDataTemp.stories = item["stories"]
-        propertyDataTemp.lot_square_footage = item["lot_square_footage"]
-        propertyDataTemp.lot_acres = item["lot_acres"]
-        propertyDataTemp.building_square_footage = item["building_square_footage"]
-        propertyDataTemp.attached_garage_footage = item["attached_garage_footage"]
-        propertyDataTemp.current_balance_due = item["current_balance_due"]
-        propertyDataTemp.tax_year_1 = item["tax_year_1"]
-        propertyDataTemp.tax_year_2 = item["tax_year_2"]
-        propertyDataTemp.tax_year_3 = item["tax_year_3"]
-        propertyDataTemp.tax_year_1_assessed = item["tax_year_1_assessed"]
-        propertyDataTemp.tax_year_2_assessed = item["tax_year_2_assessed"]
-        propertyDataTemp.tax_year_3_assessed = item["tax_year_3_assessed"]
-
-        salesDataTemp.tax_year_1_assessed = item["sale_price"]
-        salesDataTemp.tax_year_2_assessed = item["sale_date"]
-
-        try:
-            session.add(propertyDataTemp)
-            session.add(salesDataTemp)
-
-            session.commit()
-        except:
-            session.rollback()
-            raise
-        finally:
-            session.close()
-
-        return item
-
-# class DuvalRowPipeline(object):
-#     def __init__(self):
-#         self.engine = db_connect()
-#         create_table(self.engine)
-#         self.Session = sessionmaker(bind=self.engine)
-#
-#     def open_spider(self, spider):
-#         spider.myPipeline = self
-#
-#     def close_spider(self,spider):
-#         pass
-#
-#     #@check_spider_pipeline
-#     def process_item(self,item,spider):
-#         session = self.Session()
-#
-#         #Build a row
-#         propertyDataTemp = DuvalPropertyDataTemp()
-#         salesDataTemp = DuvalSalesDataTemp()
-#
-#         propertyDataTemp.parcel = item["parcel"]
-#         propertyDataTemp.mailing_address = item["mailing_address"]
-#         propertyDataTemp.owner_name = item["owner_name"]
-#         propertyDataTemp.site_address = item["site_address"]
-#         propertyDataTemp.property_type = item["property_type"]
-#         propertyDataTemp.building_type = item["building_type"]
-#         propertyDataTemp.year_built = item["year_built"]
-#         propertyDataTemp.adj_year_built = item["adj_year_built"]
-#         propertyDataTemp.units = item["units"]
-#         propertyDataTemp.bedrooms = item["bedrooms"]
-#         propertyDataTemp.baths = item["baths"]
-#         propertyDataTemp.siding_type = item["siding_type"]
-#         propertyDataTemp.stories = item["stories"]
-#         propertyDataTemp.lot_square_footage = item["lot_square_footage"]
-#         propertyDataTemp.lot_acres = item["lot_acres"]
-#         propertyDataTemp.current_balance_due = item["current_balance_due"]
-#         propertyDataTemp.tax_year_1 = item["tax_year_1"]
-#         propertyDataTemp.tax_year_2 = item["tax_year_2"]
-#         propertyDataTemp.tax_year_3 = item["tax_year_3"]
-#         propertyDataTemp.tax_year_1_assessed = item["tax_year_1_assessed"]
-#         propertyDataTemp.tax_year_2_assessed = item["tax_year_2_assessed"]
-#         propertyDataTemp.tax_year_3_assessed = item["tax_year_3_assessed"]
-#
-#         salesDataTemp.tax_year_1_assessed = item["sale_price"]
-#         salesDataTemp.tax_year_2_assessed = item["sale_date"]
-#
-#         try:
-#             session.add(propertyDataTemp)
-#             session.add(salesDataTemp)
-#
-#             session.commit()
-#         except:
-#             session.rollback()
-#             raise
-#         finally:
-#             session.close()
-#
-#         return item
