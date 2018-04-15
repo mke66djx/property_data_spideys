@@ -298,8 +298,6 @@ class CookPropertyDataTemp(DeclarativeBase):
     record5_date = Column('record5_date', Text())
 
 
-
-
 class MaricopaPropertyDataTemp(DeclarativeBase):
     __tablename__ = "maricopaCountyTemp"
     parcel = Column('parcel',String(20),primary_key=True)

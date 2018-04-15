@@ -35,7 +35,6 @@ class PierceFullPipeline(object):
 
         #Build a row
         propertyDataTemp = PiercePropertyDataTemp()
-        salesDataTemp = PierceSalesDataTemp()
 
         propertyDataTemp.parcel = item["parcel"]
         propertyDataTemp.owner_name = item["owner_name"]
@@ -67,12 +66,8 @@ class PierceFullPipeline(object):
         propertyDataTemp.tax_year_2_assessed = item["tax_year_2_assessed"]
         propertyDataTemp.tax_year_3_assessed = item["tax_year_3_assessed"]
 
-        salesDataTemp.tax_year_1_assessed = item["sale_price"]
-        salesDataTemp.tax_year_2_assessed = item["sale_date"]
-
         try:
             session.add(propertyDataTemp)
-            session.add(salesDataTemp)
             session.commit()
         except:
             session.rollback()

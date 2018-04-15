@@ -34,11 +34,13 @@ ROBOTSTXT_OBEY=False
 # Configure a delay for requests for the same website (default: 0)
 # See https://doc.scrapy.org/en/latest/topics/settings.html#download-delay
 # See also autothrottle settings and docs
-#DOWNLOAD_DELAY = .5
+DOWNLOAD_DELAY = .2
 # The download delay setting will honor only one of:
 CONCURRENT_REQUESTS_PER_DOMAIN = 1
 CONCURRENT_REQUESTS_PER_IP = 1
-#COOKIES_ENABLED = False
+#
+# REDIRECT_MAX_TIMES = 1
+# REDIRECT_MAX_METAREFRESH_DELAY = 100
 
 # Disable cookies (enabled by default)
 #COOKIES_ENABLED = False
@@ -73,11 +75,11 @@ CONCURRENT_REQUESTS_PER_IP = 1
 # Configure item pipelines
 # See https://doc.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
-    #'property_data_spideys.pipelines.PierceFullPipeline': 300,
+    'property_data_spideys.pipelines.PierceFullPipeline': 300,
     'property_data_spideys.pipelines.DuvalFullPipeline': 300,
-    # 'property_data_spideys.pipelines.CookFullPipeline': 300,
-    # 'property_data_spideys.pipelines.MaricopaFullPipeline': 300,
-    # 'property_data_spideys.pipelines.MaricopaAddToPipeline': 300,
+    'property_data_spideys.pipelines.CookFullPipeline': 300,
+    'property_data_spideys.pipelines.MaricopaFullPipeline': 300,
+    'property_data_spideys.pipelines.MaricopaAddToPipeline': 300,
 }
 
 # Enable and configure the AutoThrottle extension (disabled by default)
