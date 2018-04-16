@@ -17,7 +17,6 @@ branch_labels = None
 depends_on = None
 
 def upgrade():
-	op.drop_table('cookCounty')
 	op.rename_table('cookCountyTemp','cookCounty')
 
 def downgrade():

@@ -11,6 +11,7 @@ class PierceCountyDescriptionItem(scrapy.Item):
     owner_name = scrapy.Field()
     owner_last_name = scrapy.Field()
     owner_first_name = scrapy.Field()
+    owner_2_first = scrapy.Field()
     parcel = scrapy.Field()
     site_address = scrapy.Field()
     mailing_address = scrapy.Field()
@@ -42,9 +43,7 @@ class PierceCountyDescriptionItem(scrapy.Item):
     baths = scrapy.Field()
     siding_type = scrapy.Field()
     units = scrapy.Field()
-    sale_price = scrapy.Field()
-    sale_date = scrapy.Field()
-
+    exemption = scrapy.Field()
 
 class DuvalCountyDescriptionItem(scrapy.Item):
     parcel = scrapy.Field()

@@ -5,7 +5,6 @@
 import urllib.request
 import json
 
-
 def get_response_json_object(url, auth_token):
 
 	req=urllib.request.Request(url, None, {"X-MC-AUTH": "%s" %auth_token})
@@ -18,6 +17,6 @@ def get_response_json_object(url, auth_token):
 #json_obj = get_response_json_object('https://api.mcassessor.maricopa.gov/api/search/mh/phoenix/offset=190','5ae1363b-28b8-11e8-9917-00155da2c015')
 
 #https://api.mcassessor.maricopa.gov/api/parcel/{apn}
-json_obj = get_response_json_object('https://api.mcassessor.maricopa.gov/api/parcel/10107033','5ae1363b-28b8-11e8-9917-00155da2c015')
+json_obj = get_response_json_object('https://api.mcassessor.maricopa.gov/api/parcel/50384596','5ae1363b-28b8-11e8-9917-00155da2c015')
 
 print(json_obj)

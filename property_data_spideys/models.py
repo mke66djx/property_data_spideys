@@ -21,6 +21,7 @@ class PierceCountyPropertyData(DeclarativeBase):
     parcel = Column('parcel',String(20),primary_key=True)
     owner_name = Column('owner_name', Text())
     owner_first_name = Column('owner_first_name', Text())
+    owner_2_first = Column('owner_2_first', Text())
     owner_last_name = Column('owner_last_name', Text())
     mailing_address = Column('mailing_address', Text())
     mail_city = Column('mail_city', Text())
@@ -49,6 +50,8 @@ class PierceCountyPropertyData(DeclarativeBase):
     tax_year_1_assessed = Column('tax_year_1_assessed', Float(8))
     tax_year_2_assessed = Column('tax_year_2_assessed', Float(8))
     tax_year_3_assessed = Column('tax_year_3_assessed', Float(8))
+
+    exemption = Column('exemption', Text())
 
 class PierceCountySalesData(DeclarativeBase):
     __tablename__ = "pierceCountySales"
@@ -182,6 +185,7 @@ class PiercePropertyDataTemp(DeclarativeBase):
     parcel = Column('parcel',String(20),primary_key=True)
     owner_name = Column('owner_name', Text())
     owner_first_name = Column('owner_first_name', Text())
+    owner_2_first = Column('owner_2_first', Text())
     owner_last_name = Column('owner_last_name', Text())
     mailing_address = Column('mailing_address', Text())
     mail_city = Column('mail_city', Text())
@@ -204,9 +208,14 @@ class PiercePropertyDataTemp(DeclarativeBase):
 
     current_balance_due = Column('current_balance_due', Float(8))
 
+    tax_year_1 = Column('tax_year_1', Integer())
+    tax_year_2 = Column('tax_year_2', Integer())
+    tax_year_3 = Column('tax_year_3', Integer())
     tax_year_1_assessed = Column('tax_year_1_assessed', Float(8))
     tax_year_2_assessed = Column('tax_year_2_assessed', Float(8))
     tax_year_3_assessed = Column('tax_year_3_assessed', Float(8))
+
+    exemption = Column('exemption', Text())
 
 class PierceSalesDataTemp(DeclarativeBase):
     __tablename__ = "pierceCountySalesTemp"

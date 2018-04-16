@@ -21,6 +21,7 @@ class PierceFullPipeline(object):
         self.upgrade()
 
     def upgrade(self):
+        PierceCountyPropertyData.__table__.drop(self.engine)
         from alembic.config import Config
         from alembic import command
         alembic_cfg = Config('alembic.ini')
@@ -39,6 +40,7 @@ class PierceFullPipeline(object):
         propertyDataTemp.parcel = item["parcel"]
         propertyDataTemp.owner_name = item["owner_name"]
         propertyDataTemp.owner_first_name = item["owner_first_name"]
+        propertyDataTemp.owner_2_first = item["owner_2_first"]
         propertyDataTemp.owner_last_name = item["owner_last_name"]
         propertyDataTemp.mailing_address = item["mailing_address"]
         propertyDataTemp.mail_city = item["mail_city"]
@@ -66,6 +68,8 @@ class PierceFullPipeline(object):
         propertyDataTemp.tax_year_2_assessed = item["tax_year_2_assessed"]
         propertyDataTemp.tax_year_3_assessed = item["tax_year_3_assessed"]
 
+        propertyDataTemp.exemption = item["exemption"]
+
         try:
             session.add(propertyDataTemp)
             session.commit()
@@ -92,6 +96,7 @@ class DuvalFullPipeline(object):
         self.upgrade()
 
     def upgrade(self):
+        DuvalCountyPropertyData.__table__.drop(self.engine)
         from alembic.config import Config
         from alembic import command
         alembic_cfg = Config('alembic.ini')
@@ -105,7 +110,6 @@ class DuvalFullPipeline(object):
 
         #Build a row
         propertyDataTemp = DuvalPropertyDataTemp()
-        salesDataTemp = DuvalSalesDataTemp()
 
         propertyDataTemp.parcel = item["parcel"]
         propertyDataTemp.mailing_address = item["mailing_address"]
@@ -127,13 +131,12 @@ class DuvalFullPipeline(object):
         propertyDataTemp.homestead_exemption = item["homestead_exemption"]
         propertyDataTemp.senior_exemption = item["senior_exemption"]
 
-        salesDataTemp.tax_year_1_assessed = item["sale1_price"]
-        salesDataTemp.tax_year_2_assessed = item["sale1_date"]
+        #propertyDataTemp.tax_year_1_assessed = item["sale1_price"]
+        #propertyDataTemp.tax_year_2_assessed = item["sale1_date"]
 
 
         try:
             session.add(propertyDataTemp)
-            session.add(salesDataTemp)
             session.commit()
         except:
             session.rollback()
@@ -158,6 +161,7 @@ class CookFullPipeline(object):
         self.upgrade()
 
     def upgrade(self):
+        CookCountyPropertyData.__table__.drop(self.engine)
         from alembic.config import Config
         from alembic import command
         alembic_cfg = Config('alembic.ini')
@@ -251,6 +255,7 @@ class MaricopaFullPipeline(object):
         self.upgrade()
 
     def upgrade(self):
+        MaricopaCountyPropertyData.__table__.drop(self.engine)
         from alembic.config import Config
         from alembic import command
         alembic_cfg = Config('alembic.ini')

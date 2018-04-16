@@ -18,7 +18,6 @@ depends_on = None
 
 
 def upgrade():
-    op.drop_table('maricopaCounty')
     op.rename_table('maricopaCountyTemp','maricopaCounty')
 
 def downgrade():
