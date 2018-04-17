@@ -73,6 +73,14 @@ class DuvalCountyDescriptionItem(scrapy.Item):
     water = scrapy.Field()
     senior_exemption = scrapy.Field()
     homestead_exemption = scrapy.Field()
+    currentTaxDue = scrapy.Field()
+    currentDelinquentTax = scrapy.Field()
+
+class DuvalSalesItem(scrapy.Item):
+    parcel = scrapy.Field()
+    date = scrapy.Field()
+    price = scrapy.Field()
+    document = scrapy.Field()
 
 
 class CookCountyDescriptionItem(scrapy.Item):

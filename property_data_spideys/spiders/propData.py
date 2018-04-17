@@ -1,8 +1,9 @@
 import scrapy
 import json
 from scrapy import signals
+from property_data_spideys.models import DuvalCountySalesData,DuvalCountySalesDataTemp,DuvalCountyPropertyData,PierceCountyPropertyData,MaricopaCountyPropertyData,CookCountyPropertyData,CookPropertyDataTemp,MaricopaPropertyDataTemp,PiercePropertyDataTemp,PierceSalesDataTemp,DuvalPropertyDataTemp,db_connect,create_table
 from property_data_spideys.items import PierceCountyDescriptionItem,DuvalCountyDescriptionItem,CookCountyDescriptionItem
-from property_data_spideys.items import MaricopaCountyDescriptionItem
+from property_data_spideys.items import MaricopaCountyDescriptionItem,DuvalSalesItem
 from scrapy.spiders import CSVFeedSpider
 from scrapy.xlib.pydispatch import dispatcher
 from property_data_spideys import pipelines
@@ -14,7 +15,7 @@ import re
 def getStartUrlFilePath(parcel_file):
     relative_file_path = 'ParcelsLists/'+parcel_file
     filepath = os.path.abspath(os.path.join(os.getcwd(), relative_file_path))
-    start_url_path = "file://"+filepath
+    start_url_path = "file:///"+filepath
     return start_url_path
 
 def check_path(xpath_return):
@@ -36,14 +37,22 @@ def checkIfNa(string,type):
 #Scraper for Pierce County- includes property char,taxes & owner info
 class PierceCountyScraper(CSVFeedSpider):
     name = "pierce_county_spider"
-    start_urls = [getStartUrlFilePath("pierce_parcels.csv")]
+    start_urls = [getStartUrlFilePath("parcels.csv")]
     custom_settings = {'ITEM_PIPELINES': {'property_data_spideys.pipelines.PierceFullPipeline': 400},'DOWNLOAD_DELAY':.0025,'CONCURRENT_REQUESTS_PER_DOMAIN': 25,'CONCURRENT_REQUESTS_PER_IP': 25}
 
     def __init__(self):
         dispatcher.connect(self.spider_closed, signals.spider_closed)
 
     def spider_closed(self, spider):
-        pass
+        self.engine = db_connect()
+        PierceCountyPropertyData.__table__.drop(self.engine)
+        from alembic.config import Config
+        from alembic import command
+        alembic_cfg = Config('alembic.ini')
+        with self.engine.begin() as connection:
+            alembic_cfg.attributes['connection'] = connection
+            command.upgrade(alembic_cfg, "65c4237f4c27")
+            command.downgrade(alembic_cfg, "base")
 
     def parse_row(self,response,row):
         pin = row['parcel']
@@ -203,14 +212,22 @@ class PierceCountyScraper(CSVFeedSpider):
 class DuvalCountyScraper(CSVFeedSpider):
     name = "duval_county_spider"
     start_urls = [getStartUrlFilePath("duval_parcels.csv")]
-    custom_settings = {'ITEM_PIPELINES': {'property_data_spideys.pipelines.DuvalFullPipeline': 400},'DOWNLOAD_DELAY':.0025,'CONCURRENT_REQUESTS_PER_DOMAIN': 25,'CONCURRENT_REQUESTS_PER_IP': 25}
+    custom_settings = {'ITEM_PIPELINES': {'property_data_spideys.pipelines.DuvalFullPipeline': 400},'DOWNLOAD_DELAY':.025,'CONCURRENT_REQUESTS_PER_DOMAIN': 15,'CONCURRENT_REQUESTS_PER_IP': 15}
 
     def __init__(self):
         dispatcher.connect(self.spider_closed, signals.spider_closed)
         #This will later be passed in as argument by spider caller
 
     def spider_closed(self, spider):
-        pass
+        self.engine = db_connect()
+        DuvalCountyPropertyData.__table__.drop(self.engine)
+        from alembic.config import Config
+        from alembic import command
+        alembic_cfg = Config('alembic.ini')
+        with self.engine.begin() as connection:
+            alembic_cfg.attributes['connection'] = connection
+            command.upgrade(alembic_cfg, "2849d9e93551")
+            command.downgrade(alembic_cfg, "base")
 
     def parse_row(self,response,row):
         pin = row['parcel']
@@ -307,9 +324,6 @@ class DuvalCountyScraper(CSVFeedSpider):
         item['homestead_exemption'] = homestead_exemption
         item['senior_exemption'] = senior_exemption
 
-        #Need to get taxes owed
-        #http://fl-duval-taxcollector.publicaccessnow.com/propertytaxsearch/accountdetail.aspx?p=019089-0000
-
         yield scrapy.Request('http://fl-duval-taxcollector.publicaccessnow.com/propertytaxsearch/accountdetail.aspx?p='+parcel, callback=self.parse_taxes,meta={'item': item,'parcel':parcel})
 
     def parse_taxes(self, response):
@@ -319,61 +333,16 @@ class DuvalCountyScraper(CSVFeedSpider):
         currentTaxDue,currentDelinquentTax = 0,0
         currentTaxes = check_path(response.xpath('//*[@id="lxT444"]/p/text()').extract())
         if currentTaxes == 'NA':
-            currentTaxDue = check_path(response.xpath('//*[@id="lxT444"]/table/tr/td[3]/text()').extract())
-            print(response.xpath('//*[@id="lxT444"]/table/tr/td[3]/text()').extract())
+            currentTaxDue = check_path(response.xpath('//*[@id="lxT444"]/table/tbody/tr/td[3]/text()').extract())
 
         delinquentTaxes = check_path(response.xpath('//*[@id="lxT444"]/p/text()').extract())
         if delinquentTaxes == 'NA':
-            print(response.xpath('//*[@id="lxT445"]/table/tr/td[3]/text()').extract())
-            currentDelinquentTax = check_path(response.xpath('//*[@id="lxT445"]/table/tr/td[3]/text()').extract())
+            currentDelinquentTax = check_path(response.xpath('//*[@id="lxT445"]/table/tbody/tr/td[3]/text()').extract())
 
-        print(currentTaxDue,currentDelinquentTax,parcel)
-
+        item['currentTaxDue'] = float(checkIfNa(str(currentTaxDue).replace(',', '').replace('$',""),'num'))
+        item['currentDelinquentTax'] = float(checkIfNa(str(currentDelinquentTax).replace(',', '').replace('$',""),'num'))
 
         return item
-
-
-#Sales Scraper for Duval County- includes parcel sales data
-class DuvalCountySalesScraper(CSVFeedSpider):
-    name = "duval_sales_spider"
-    start_urls = [getStartUrlFilePath("duval_parcels.csv")]
-
-    def __init__(self):
-        dispatcher.connect(self.spider_closed, signals.spider_closed)
-        #This will later be passed in as argument by spider caller
-
-    def spider_closed(self, spider):
-        pass
-
-    def parse_row(self,response,row):
-        pin = row['parcel']
-        #General summary page, will b e used for owner info
-        request = scrapy.Request('http://apps.coj.net/PAO_PropertySearch/Basic/Detail.aspx?RE='+pin, callback=self.parse_summary)
-        request.meta['item'] = DuvalCountyDescriptionItem()
-        request.meta['pin'] = pin
-        return [request]
-
-    #Chain data extraction and consolidate into one item
-    def parse_summary(self, response):
-
-        rows = check_path(response.xpath('count(//*[@id="ctl00_cphBody_gridSalesHistory"]/tr)'))
-        print(rows.extract())
-        for x in range(0,int(float(rows.extract()))):
-            date = check_path(response.xpath('//*[@id="ctl00_cphBody_gridSalesHistory"]/tr['+str(x)+']/td[2]/text()').extract())
-            price = check_path(response.xpath('//*[@id="ctl00_cphBody_gridSalesHistory"]/tr['+str(x)+']/td[3]/text()').extract())
-            document =check_path(response.xpath('//*[@id="ctl00_cphBody_gridSalesHistory"]/tr['+str(x)+']/td[4]/text()').extract())
-            print(date)
-            print(price)
-            print(document)
-
-        item = response.meta['item']
-        # item['parcel'] = str(parcel).replace('-', '')
-        # item['owner_name'] = owner_name
-
-        #Need to get taxes owed
-        #http://fl-duval-taxcollector.publicaccessnow.com/propertytaxsearch/accountdetail.aspx?p=019089-0000
-
-        yield item
 
 #Scraper for Duval County- includes property char & taxes,owner info,
 # document records,unpaid taxes, sold taxes,exemptions
@@ -390,7 +359,15 @@ class CookCountyScraper(CSVFeedSpider):
         dispatcher.connect(self.spider_closed, signals.spider_closed)
 
     def spider_closed(self, spider):
-        pass
+        self.engine = db_connect()
+        CookCountyPropertyData.__table__.drop(self.engine)
+        from alembic.config import Config
+        from alembic import command
+        alembic_cfg = Config('alembic.ini')
+        with self.engine.begin() as connection:
+            alembic_cfg.attributes['connection'] = connection
+            command.upgrade(alembic_cfg, "110ec6566dca")
+            command.downgrade(alembic_cfg, "base")
 
     def parse_row(self,response,row):
         pin = row['parcel']
@@ -659,7 +636,15 @@ class MaricopaSingleParcelAPI(CSVFeedSpider):
         dispatcher.connect(self.spider_closed, signals.spider_closed)
 
     def spider_closed(self, spider):
-        pass
+        self.engine = db_connect()
+        MaricopaCountyPropertyData.__table__.drop(self.engine)
+        from alembic.config import Config
+        from alembic import command
+        alembic_cfg = Config('alembic.ini')
+        with self.engine.begin() as connection:
+            alembic_cfg.attributes['connection'] = connection
+            command.upgrade(alembic_cfg, "9dcae9ce3303")
+            command.downgrade(alembic_cfg, "base")
 
     def parse_row(self,response,row):
         pin = row['parcel']
@@ -735,4 +720,147 @@ class MaricopaSingleParcelAPI(CSVFeedSpider):
         item['last_sale_price'] = float(checkIfNa(last_sale_price,'num'))
 
         yield item
+
+#Scraper for Duval County- includes sales data along with property data
+class DuvalCountySalesIncScraper(CSVFeedSpider):
+    name = "duval_plusSales_spider"
+    start_urls = [getStartUrlFilePath("duval_parcels.csv")]
+    custom_settings = {'DOWNLOAD_DELAY':.025,'CONCURRENT_REQUESTS_PER_DOMAIN': 15,'CONCURRENT_REQUESTS_PER_IP': 15}
+
+    def __init__(self):
+        dispatcher.connect(self.spider_closed, signals.spider_closed)
+        #This will later be passed in as argument by spider caller
+
+    def spider_closed(self, spider):
+        self.engine = db_connect()
+        DuvalCountySalesData.__table__.drop(self.engine)
+        DuvalCountyPropertyData.__table__.drop(self.engine)
+        from alembic.config import Config
+        from alembic import command
+        alembic_cfg = Config('alembic.ini')
+        with self.engine.begin() as connection:
+            alembic_cfg.attributes['connection'] = connection
+            command.upgrade(alembic_cfg, "d568fb36db9e")
+            command.upgrade(alembic_cfg, "2849d9e93551")
+            command.downgrade(alembic_cfg, "base")
+
+    def parse_row(self,response,row):
+        pin = row['parcel']
+        #General summary page, will b e used for owner info
+        request = scrapy.Request('http://apps.coj.net/PAO_PropertySearch/Basic/Detail.aspx?RE='+pin, callback=self.parse_summary)
+        request.meta['item'] = DuvalCountyDescriptionItem()
+        request.meta['pin'] = pin
+        yield request
+
+    #Chain data extraction and consolidate into one item
+    def parse_summary(self, response):
+
+        #--------------------------------------Property and owner info-------------------------------------------#
+        parcel = check_path(response.xpath('//*[@id="ctl00_cphBody_lblRealEstateNumber"]/text()').extract())
+        owner_name = check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterOwnerInformation_ctl00_lblOwnerName"]/text()').extract())
+        mailing_address_street = check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterOwnerInformation_ctl00_lblMailingAddressLine1"]/text()').extract())
+        mailing_address_cityzip = check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterOwnerInformation_ctl00_lblMailingAddressLine3"]/text()').extract())
+        site_address_street = check_path(response.xpath('//*[@id="ctl00_cphBody_lblPrimarySiteAddressLine1"]/text()').extract())
+        site_address_cityzip = check_path(response.xpath('//*[@id="ctl00_cphBody_lblPrimarySiteAddressLine2"]/text()').extract())
+        property_use = check_path(response.xpath('//*[@id="ctl00_cphBody_lblPropertyUse"]/text()').extract())
+        building_type = check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_lblBuildingType"]/text()').extract())
+        year_built = check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_lblYearBuilt"]/text()').extract())
+        stories = check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingAttributes"]/tr[2]/td[2]/text()').extract())
+        bedrooms = check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingAttributes"]/tr[3]/td[2]/text()').extract())
+        bathrooms = check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingAttributes"]/tr[4]/td[2]/text()').extract())
+        units = check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingAttributes"]/tr[5]/td[2]/text()').extract())
+        total_heated_sqaure_footage = check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingArea"]/tr[last()]/td[3]/text()').extract())
+        heating_type = check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingElements"]/tr[9]/td[3]/text()').extract())
+        ac_type = check_path(response.xpath('//*[@id="ctl00_cphBody_repeaterBuilding_ctl00_gridBuildingElements"]/tr[10]/td[3]/text()').extract())
+        tax_market_value_year1 = check_path(response.xpath('//*[@id="ctl00_cphBody_lblJustMarketValueCertified"]/text()').extract())
+        tax_market_value_year2 = check_path(response.xpath('//*[@id="ctl00_cphBody_lblJustMarketValueInProgress"]/text()').extract())
+        sale1_date = check_path(response.xpath('//*[@id="ctl00_cphBody_lblHeaderInProgress"]/text()').extract())
+        sale2_date = check_path(response.xpath('//*[@id="ctl00_cphBody_lblHeaderCertified"]/text()').extract())
+        sale1_price = check_path(response.xpath('//*[@id="ctl00_cphBody_gridSalesHistory"]/tr[2]/td[3]/text()').extract())
+        sale2_price = check_path(response.xpath('//*[@id="ctl00_cphBody_gridSalesHistory"]/tr[3]/td[3]/text()').extract())
+        total_square_footage = check_path(response.xpath('//*[@id="ctl00_cphBody_lblTotalArea1"]/text()').extract())
+        exemptions_none = check_path(response.xpath('//*[@id="ctl00_cphBody_lblExemptionsCountyNoData"]/li/text()').extract())
+
+        #-----------------------------------------Handle Exemptions-------------------------------------------#
+        senior_exemption,homestead_exemption = 0,0
+        if exemptions_none == None:
+            exemption_1 = check_path(response.xpath('//*[@id="ctl00_cphBody_ul_propExemptionsCounty"]/li[1]/span[1]/text()').extract())
+            exemption_2 = check_path(response.xpath('//*[@id="ctl00_cphBody_ul_propExemptionsCounty"]/li[2]/span[1]/text()').extract())
+            exemption_3 = check_path(response.xpath('//*[@id="ctl00_cphBody_ul_propExemptionsCounty"]/li[3]/span[1]/text()').extract())
+            exemption_4 = check_path(response.xpath('//*[@id="ctl00_cphBody_ul_propExemptionsCounty"]/li[4]/span[1]/text()').extract())
+            exemption_5 = check_path(response.xpath('//*[@id="ctl00_cphBody_ul_propExemptionsCounty"]/li[4]/span[1]/text()').extract())
+
+            exemption_list_filtered = []
+            for x in exemption_1,exemption_2,exemption_3,exemption_4,exemption_5:
+                if x == None:
+                    exemption_list_filtered.append('NA')
+                else:
+                    exemption_list_filtered.append(x)
+
+            expemption_string = '\t'.join(exemption_list_filtered)
+            if "Senior" in expemption_string:
+                senior_exemption = 1
+            if "Homestead" in expemption_string :
+                homestead_exemption = 1
+        #------------------------------------------Sales Data---------------------------------------------------#
+        rows = check_path(response.xpath('count(//*[@id="ctl00_cphBody_gridSalesHistory"]/tr)'))
+        for x in range(2,int(float(rows.extract()))+1):
+            date = check_path(response.xpath('//*[@id="ctl00_cphBody_gridSalesHistory"]/tr['+str(x)+']/td[2]/text()').extract())
+            price = check_path(response.xpath('//*[@id="ctl00_cphBody_gridSalesHistory"]/tr['+str(x)+']/td[3]/text()').extract())
+            document =check_path(response.xpath('//*[@id="ctl00_cphBody_gridSalesHistory"]/tr['+str(x)+']/td[4]/text()').extract())
+            salesItem = DuvalSalesItem()
+            salesItem['parcel'] = str(parcel).replace('-', '')
+            salesItem['date'] = date
+            salesItem['price'] = price
+            salesItem['document'] = document
+            yield salesItem
+
+        item = response.meta['item']
+        item['parcel'] = str(parcel).replace('-', '')
+        item['owner_name'] = owner_name
+        item['site_address'] = ''.join([str(site_address_street),str(site_address_cityzip)])
+        item['mailing_address'] = ''.join([str(mailing_address_street),str(mailing_address_cityzip)])
+        item['property_type'] = property_use
+        item['building_type'] = building_type
+        item['building_square_footage'] = int(checkIfNa(total_heated_sqaure_footage,'num'))
+        item['year_built'] = int(checkIfNa(year_built,'num'))
+        item['stories'] = float(checkIfNa(stories,'num'))
+        item['bedrooms'] = float(checkIfNa(bedrooms,'num'))
+        item['baths'] = float(checkIfNa(bathrooms,'num'))
+        item['siding_type'] = 'NA'
+        item['units'] = float(checkIfNa(units,'num'))
+        item['sale1_price'] = sale1_price
+        item['sale1_date'] = sale1_date
+        item['sale2_price'] = sale2_price
+        item['sale2_date'] = sale2_date
+        item['tax_year_1_assessed'] = float(checkIfNa((tax_market_value_year1).replace(',', '').replace('$', ''),'num'))
+        item['tax_year_2_assessed'] = float(checkIfNa((tax_market_value_year2).replace(',', '').replace('$', ''),'num'))
+        item['lot_square_footage'] = int(checkIfNa(total_square_footage,'num'))
+        item['lot_acres'] = 'NA'
+        item['electric'] = 'NA'
+        item['sewer'] = 'NA'
+        item['water'] = 'NA'
+        item['homestead_exemption'] = homestead_exemption
+        item['senior_exemption'] = senior_exemption
+
+        yield scrapy.Request('http://fl-duval-taxcollector.publicaccessnow.com/propertytaxsearch/accountdetail.aspx?p='+parcel, callback=self.parse_taxes,meta={'item': item,'parcel':parcel})
+
+    def parse_taxes(self, response):
+        item = response.meta['item']
+        parcel = response.meta['parcel']
+
+        currentTaxDue,currentDelinquentTax = 0,0
+        currentTaxes = check_path(response.xpath('//*[@id="lxT444"]/p/text()').extract())
+        if currentTaxes == 'NA':
+            currentTaxDue = check_path(response.xpath('//*[@id="lxT444"]/table/tbody/tr/td[3]/text()').extract())
+
+        delinquentTaxes = check_path(response.xpath('//*[@id="lxT444"]/p/text()').extract())
+        if delinquentTaxes == 'NA':
+            currentDelinquentTax = check_path(response.xpath('//*[@id="lxT445"]/table/tbody/tr/td[3]/text()').extract())
+
+        item['currentTaxDue'] = float(checkIfNa(str(currentTaxDue).replace(',', '').replace('$',""),'num'))
+        item['currentDelinquentTax'] = float(checkIfNa(str(currentDelinquentTax).replace(',', '').replace('$',""),'num'))
+
+        return item
+
 

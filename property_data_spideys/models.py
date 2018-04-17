@@ -84,14 +84,16 @@ class DuvalCountyPropertyData(DeclarativeBase):
     homestead_exemption = Column('homestead_exemption', Integer())
     senior_exemption = Column('senior_exemption', Integer())
 
-
+    currentTaxDue = Column('currentTaxDue', Integer())
+    currentDelinquentTax = Column('currentDelinquentTax', Integer())
 
 class DuvalCountySalesData(DeclarativeBase):
     __tablename__ = "duvalCountySales"
     id = Column(Integer, primary_key=True)
     parcel = Column('parcel', String(20))
-    sale_price = Column('sale1_price', Text())
-    sale_date = Column('sale1_date', Text())
+    date = Column('date', Text())
+    price = Column('price', Text())
+    document = Column('document', Text())
 
 
 class CookCountyPropertyData(DeclarativeBase):
@@ -247,14 +249,17 @@ class DuvalPropertyDataTemp(DeclarativeBase):
     tax_year_2_assessed = Column('tax_year_2_assessed', Float(8))
     homestead_exemption = Column('homestead_exemption', Integer())
     senior_exemption = Column('senior_exemption', Integer())
+    currentTaxDue = Column('currentTaxDue', Float(8))
+    currentDelinquentTax = Column('currentDelinquentTax', Float(8))
 
 
-class DuvalSalesDataTemp(DeclarativeBase):
+class DuvalCountySalesDataTemp(DeclarativeBase):
     __tablename__ = "duvalCountySalesTemp"
     id = Column(Integer, primary_key=True)
     parcel = Column('parcel', String(20))
-    sale_price = Column('sale1_price', Text())
-    sale_date = Column('sale1_date', Text())
+    date = Column('date', Text())
+    price = Column('price', Text())
+    document = Column('document', Text())
 
 class CookPropertyDataTemp(DeclarativeBase):
     __tablename__ = "cookCountyTemp"

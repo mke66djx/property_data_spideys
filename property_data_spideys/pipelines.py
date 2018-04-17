@@ -1,4 +1,5 @@
-from property_data_spideys.models import DuvalCountyPropertyData,PierceCountyPropertyData,MaricopaCountyPropertyData,CookCountyPropertyData,CookPropertyDataTemp,MaricopaPropertyDataTemp,PiercePropertyDataTemp,PierceSalesDataTemp,DuvalSalesDataTemp,DuvalPropertyDataTemp,db_connect,create_table
+from property_data_spideys.models import DuvalCountySalesData,DuvalCountySalesDataTemp,DuvalCountyPropertyData,PierceCountyPropertyData,MaricopaCountyPropertyData,CookCountyPropertyData,CookPropertyDataTemp,MaricopaPropertyDataTemp,PiercePropertyDataTemp,PierceSalesDataTemp,DuvalPropertyDataTemp,db_connect,create_table
+from property_data_spideys.items import DuvalCountyDescriptionItem,PierceCountyDescriptionItem,CookCountyDescriptionItem,MaricopaCountyDescriptionItem,DuvalSalesItem
 import functools
 from sqlalchemy.orm import (mapper,sessionmaker)
 from scrapy.exceptions import DropItem
@@ -18,22 +19,16 @@ class PierceFullPipeline(object):
         spider.myPipeline = self
 
     def close_spider(self,spider):
-        self.upgrade()
+        pass
 
     def upgrade(self):
-        PierceCountyPropertyData.__table__.drop(self.engine)
-        from alembic.config import Config
-        from alembic import command
-        alembic_cfg = Config('alembic.ini')
-        print(alembic_cfg)
-        with self.engine.begin() as connection:
-            alembic_cfg.attributes['connection'] = connection
-            command.upgrade(alembic_cfg, "65c4237f4c27")
-            command.downgrade(alembic_cfg, "base")
+        pass
 
     def process_item(self,item,spider):
-        session = self.Session()
+        if not isinstance(item, PierceCountyDescriptionItem):
+            return item
 
+        session = self.Session()
         #Build a row
         propertyDataTemp = PiercePropertyDataTemp()
 
@@ -93,19 +88,15 @@ class DuvalFullPipeline(object):
         spider.myPipeline = self
 
     def close_spider(self,spider):
-        self.upgrade()
+        pass
 
     def upgrade(self):
-        DuvalCountyPropertyData.__table__.drop(self.engine)
-        from alembic.config import Config
-        from alembic import command
-        alembic_cfg = Config('alembic.ini')
-        with self.engine.begin() as connection:
-            alembic_cfg.attributes['connection'] = connection
-            command.upgrade(alembic_cfg, "2849d9e93551")
-            command.downgrade(alembic_cfg, "base")
+        pass
 
     def process_item(self,item,spider):
+        if not isinstance(item, DuvalCountyDescriptionItem):
+            return item
+
         session = self.Session()
 
         #Build a row
@@ -131,12 +122,49 @@ class DuvalFullPipeline(object):
         propertyDataTemp.homestead_exemption = item["homestead_exemption"]
         propertyDataTemp.senior_exemption = item["senior_exemption"]
 
-        #propertyDataTemp.tax_year_1_assessed = item["sale1_price"]
-        #propertyDataTemp.tax_year_2_assessed = item["sale1_date"]
+        propertyDataTemp.currentTaxDue = item["currentTaxDue"]
+        propertyDataTemp.currentDelinquentTax = item["currentDelinquentTax"]
 
 
         try:
             session.add(propertyDataTemp)
+            session.commit()
+        except:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+        return item
+
+#(Non Blocking) - Used to replace/update an entire table
+class DuvalSalesPipeline(object):
+    def __init__(self):
+        self.engine = db_connect()
+        create_table(self.engine,DuvalCountySalesData)
+        create_table(self.engine,DuvalCountySalesDataTemp)
+        self.Session = sessionmaker(bind=self.engine)
+
+    def open_spider(self, spider):
+        spider.myPipeline = self
+
+    def close_spider(self,spider):
+        pass
+
+    def process_item(self,item,spider):
+        if not isinstance(item, DuvalSalesItem):
+            return item
+
+        session = self.Session()
+        #Build a row
+        duvalCountySalesDataTemp = DuvalCountySalesDataTemp()
+
+        duvalCountySalesDataTemp.parcel = item["parcel"]
+        duvalCountySalesDataTemp.date = item["date"]
+        duvalCountySalesDataTemp.price = item["price"]
+        duvalCountySalesDataTemp.document = item["document"]
+
+        try:
+            session.add(duvalCountySalesDataTemp)
             session.commit()
         except:
             session.rollback()
@@ -158,19 +186,14 @@ class CookFullPipeline(object):
         spider.myPipeline = self
 
     def close_spider(self,spider):
-        self.upgrade()
+        pass
 
     def upgrade(self):
-        CookCountyPropertyData.__table__.drop(self.engine)
-        from alembic.config import Config
-        from alembic import command
-        alembic_cfg = Config('alembic.ini')
-        with self.engine.begin() as connection:
-            alembic_cfg.attributes['connection'] = connection
-            command.upgrade(alembic_cfg, "110ec6566dca")
-            command.downgrade(alembic_cfg, "base")
+        pass
 
     def process_item(self,item,spider):
+        if not isinstance(item, CookCountyDescriptionItem):
+            return item
 
         session = self.Session()
         propertyDataTemp = CookPropertyDataTemp()
@@ -255,16 +278,12 @@ class MaricopaFullPipeline(object):
         self.upgrade()
 
     def upgrade(self):
-        MaricopaCountyPropertyData.__table__.drop(self.engine)
-        from alembic.config import Config
-        from alembic import command
-        alembic_cfg = Config('alembic.ini')
-        with self.engine.begin() as connection:
-            alembic_cfg.attributes['connection'] = connection
-            command.upgrade(alembic_cfg, "9dcae9ce3303")
-            command.downgrade(alembic_cfg, "base")
+        pass
 
     def process_item(self,item,spider):
+        if not isinstance(item, MaricopaCountyDescriptionItem):
+            return item
+
         session = self.Session()
 
         propertyDataTemp = MaricopaPropertyDataTemp()
@@ -319,6 +338,9 @@ class MaricopaAddToPipeline(object):
         pass
 
     def process_item(self,item,spider):
+        if not isinstance(item, MaricopaCountyDescriptionItem):
+            return item
+
         session = self.Session()
 
         propertyData = MaricopaCountyPropertyData()

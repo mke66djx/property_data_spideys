@@ -77,6 +77,7 @@ CONCURRENT_REQUESTS_PER_IP = 10
 ITEM_PIPELINES = {
     'property_data_spideys.pipelines.PierceFullPipeline': 300,
     'property_data_spideys.pipelines.DuvalFullPipeline': 300,
+    'property_data_spideys.pipelines.DuvalSalesPipeline': 300,
     'property_data_spideys.pipelines.CookFullPipeline': 300,
     'property_data_spideys.pipelines.MaricopaFullPipeline': 300,
     'property_data_spideys.pipelines.MaricopaAddToPipeline': 300,
