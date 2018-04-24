@@ -721,6 +721,7 @@ class MaricopaSingleParcelAPI(CSVFeedSpider):
 
         yield item
 
+
 #Scraper for Duval County- includes sales data along with property data
 class DuvalCountySalesIncScraper(CSVFeedSpider):
     name = "duval_plusSales_spider"
