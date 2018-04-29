@@ -37,9 +37,9 @@ def checkIfNa(string,type):
 #Scraper for Pierce County- includes property char,taxes & owner info
 class PierceCountyScraper(CSVFeedSpider):
     name = "pierce_county_spider"
-    start_urls = [getStartUrlFilePath("parcels.csv")]
-    custom_settings = {'ITEM_PIPELINES': {'property_data_spideys.pipelines.PierceFullPipeline': 400},'DOWNLOAD_DELAY':.0025,'CONCURRENT_REQUESTS_PER_DOMAIN': 25,'CONCURRENT_REQUESTS_PER_IP': 25}
-
+    start_urls = [getStartUrlFilePath("PierceSubset.csv")]
+    custom_settings = {'ITEM_PIPELINES': {'property_data_spideys.pipelines.PierceFullPipeline': 400},'DOWNLOAD_DELAY':.075,'CONCURRENT_REQUESTS_PER_DOMAIN': 5,'CONCURRENT_REQUESTS_PER_IP': 5}
+    cookieJarIndex1 = 0
     def __init__(self):
         dispatcher.connect(self.spider_closed, signals.spider_closed)
 
@@ -57,10 +57,12 @@ class PierceCountyScraper(CSVFeedSpider):
     def parse_row(self,response,row):
         pin = row['parcel']
 
+        self.cookieJarIndex1 = self.cookieJarIndex1+ 1
         #General summary page, will be used for owner info
         request = scrapy.Request('https://epip.co.pierce.wa.us/cfapps/atr/epip/summary.cfm?parcel='+pin, callback=self.parse_summary)
         request.meta['item'] = PierceCountyDescriptionItem()
         request.meta['pin'] = pin
+        request.meta['cookiejar'] = self.cookieJarIndex1
         yield request
 
     #Chain data extraction and consolidate into one item
@@ -323,6 +325,9 @@ class DuvalCountyScraper(CSVFeedSpider):
         item['water'] = 'NA'
         item['homestead_exemption'] = homestead_exemption
         item['senior_exemption'] = senior_exemption
+
+        #Need to get taxes owed
+        #http://fl-duval-taxcollector.publicaccessnow.com/propertytaxsearch/accountdetail.aspx?p=019089-0000
 
         yield scrapy.Request('http://fl-duval-taxcollector.publicaccessnow.com/propertytaxsearch/accountdetail.aspx?p='+parcel, callback=self.parse_taxes,meta={'item': item,'parcel':parcel})
 
