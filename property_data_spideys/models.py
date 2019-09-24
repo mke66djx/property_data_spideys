@@ -91,8 +91,8 @@ class DuvalCountySalesData(DeclarativeBase):
     __tablename__ = "duvalCountySales"
     id = Column(Integer, primary_key=True)
     parcel = Column('parcel', String(20))
-    date = Column('date', Text())
-    price = Column('price', Text())
+    date = Column('date', DateTime)
+    price = Column('price', Float(8))
     document = Column('document', Text())
 
 
@@ -257,8 +257,8 @@ class DuvalCountySalesDataTemp(DeclarativeBase):
     __tablename__ = "duvalCountySalesTemp"
     id = Column(Integer, primary_key=True)
     parcel = Column('parcel', String(20))
-    date = Column('date', Text())
-    price = Column('price', Text())
+    date = Column('date', DateTime)
+    price = Column('price', Float(8))
     document = Column('document', Text())
 
 class CookPropertyDataTemp(DeclarativeBase):

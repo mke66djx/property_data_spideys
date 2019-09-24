@@ -11,11 +11,12 @@ import locale
 import os
 import os.path
 import re
+from datetime import datetime
 
 def getStartUrlFilePath(parcel_file):
     relative_file_path = 'ParcelsLists/'+parcel_file
     filepath = os.path.abspath(os.path.join(os.getcwd(), relative_file_path))
-    start_url_path = "file:///"+filepath
+    start_url_path = "file://"+filepath
     return start_url_path
 
 def check_path(xpath_return):
@@ -816,8 +817,8 @@ class DuvalCountySalesIncScraper(CSVFeedSpider):
             document =check_path(response.xpath('//*[@id="ctl00_cphBody_gridSalesHistory"]/tr['+str(x)+']/td[4]/text()').extract())
             salesItem = DuvalSalesItem()
             salesItem['parcel'] = str(parcel).replace('-', '')
-            salesItem['date'] = date
-            salesItem['price'] = price
+            salesItem['date'] = datetime.strptime(date , '%m/%d/%Y')
+            salesItem['price'] = float(checkIfNa((price).replace(',', '').replace('$', ''),'num'))
             salesItem['document'] = document
             yield salesItem
 
